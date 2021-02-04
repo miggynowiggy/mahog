@@ -1,0 +1,27 @@
+$body-font-family: "Poppins", sans-serif;
+$font-weights: (
+	"medium": 500,
+	"semibold": 600,
+	"extrabold": 800,
+);
+$headings: (
+	"body-2": (
+		"line-height": 1.5rem,
+	),
+	"body-1": (
+		"line-height": 1.75rem,
+	),
+	"subtitle-2": (
+		"line-height": 1.625rem,
+	),
+	"subtitle-1": (
+		"line-height": 2rem,
+	),
+);
+$card-border-radius: 31px;
+$card-outlined-border-width: 10px;
+$login-bg: (
+	"background-color": #0093e9,
+	"background-image":
+		linear-gradient(160deg, #0093e9 0%, #80d0c7 50%, #00b882 100%),
+);
