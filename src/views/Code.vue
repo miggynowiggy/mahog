@@ -1,7 +1,7 @@
 <template>
 	<v-container fluid pa-0 fill-height class="pt-3">
-		<v-row align="center" justify="space-between" class="pa-2">
-			<v-col cols="7">
+		<v-row align="center" justify="space-around" class="pa-2">
+			<v-col cols="6">
 				<v-card height="80vh" class="pa-2" elevation="12">
 					<prism-editor
 						class="my-editor"
