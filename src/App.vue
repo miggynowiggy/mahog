@@ -1,14 +1,22 @@
 <template>
 	<v-app>
-		<v-app-bar app dark color="primary">
-			<v-app-bar-title
-				><p class="text-h4 mt-2 font-weight-bold white--text">
-					Mahog
-				</p></v-app-bar-title
-			>
+		<v-app-bar app dark color="primary" height="100px" hide-on-scroll>
+			<v-row align="start" justify="center" wrap class="pt-3">
+				<v-col cols="1">
+					<v-img
+						:src="require('@/assets/logo_transparent_white.png')"
+						height="75px"
+						width="75px"
+					/>
+				</v-col>
+				<v-col cols="2">
+					<p class="text-h2 font-weight-bold">Mahog</p>
+				</v-col>
+			</v-row>
 		</v-app-bar>
+
 		<v-main>
-			<v-container fluid fill-height pa-0 mt-3>
+			<v-container fluid fill-height pa-0 dark>
 				<v-row align="center" justify="center" wrap mt-n6>
 					<v-col cols="12">
 						<v-tabs
@@ -45,7 +53,7 @@
 				</v-row>
 			</v-container>
 		</v-main>
-		<v-footer class="grey lighten-4" height="40px">
+		<v-footer class="mt-4" height="60px">
 			<v-row align="center" justify="center">
 				<v-col cols="12" align="center">
 					<p class="text-subtitle-1 primary--text darken-2">Mahog © 2021</p>
@@ -59,6 +67,9 @@
 	import Code from "@/views/Code.vue";
 	import References from "@/views/References.vue";
 	export default {
+		created() {
+			this.$vuetify.theme.dark = true;
+		},
 		name: "App",
 		components: { Code, References },
 
