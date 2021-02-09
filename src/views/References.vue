@@ -9,7 +9,7 @@
 					<v-divider></v-divider>
 					<v-container fluid pa-0>
 						<v-data-table
-							:headers="keywordHeaders"
+							:headers="keywordsHeader"
 							:items="keywords"
 							:items-per-page="-1"
 						></v-data-table>
@@ -24,7 +24,7 @@
 					<v-divider></v-divider>
 					<v-container fluid pa-0>
 						<v-data-table
-							:header="symbolHeader"
+							:header="symbolsHeader"
 							:items="symbols"
 							:items-per-page="-1"
 						></v-data-table>

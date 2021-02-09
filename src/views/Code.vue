@@ -1,7 +1,8 @@
 <template>
 	<v-container fluid py-10 fill-height>
 		<v-row align="center" justify="space-around" class="pa-2">
-			<v-col sm="12" md="6" lg="6" cols="6">
+			<!-- The code editor on the left -->
+			<v-col xs="12" sm="12" md="6" lg="6" cols="6">
 				<v-card height="80vh" class="pa-2" elevation="24">
 					<prism-editor
 						class="my-editor"
@@ -11,8 +12,70 @@
 					></prism-editor>
 				</v-card>
 			</v-col>
-			<v-col sm="12" md="5" lg="5" cols="5">
+			<!-- The run, stop, clear button in the middle -->
+			<v-col cols="12" sm="12" md="1" lg="1">
 				<v-row align="center" justify="center" wrap>
+					<v-col xs="10" sm="10" md="12" lg="12" align="center">
+						<v-tooltip right>
+							<template v-slot:activator="{ on, attrs }">
+								<v-btn
+									:icon="$vuetify.breakpoint.mdAndUp"
+									:block="$vuetify.breakpoint.smAndDown"
+									dark
+									x-large
+									color="success"
+									v-bind="attrs"
+									v-on="on"
+								>
+									<v-icon x-large>play_circle_filled</v-icon>
+								</v-btn>
+							</template>
+							<span class="text-subtitle-1">Run Code</span>
+						</v-tooltip>
+					</v-col>
+					<v-col xs="10" sm="10" md="12" lg="12" align="center">
+						<v-tooltip right>
+							<template v-slot:activator="{ on, attrs }">
+								<v-btn
+									:icon="$vuetify.breakpoint.mdAndUp"
+									:block="$vuetify.breakpoint.smAndDown"
+									dark
+									x-large
+									color="error"
+									v-bind="attrs"
+									v-on="on"
+								>
+									<v-icon x-large>cancel</v-icon>
+								</v-btn>
+							</template>
+							<span class="text-subtitle-1">Stop Code</span>
+						</v-tooltip>
+					</v-col>
+					<v-col xs="10" sm="10" md="12" lg="12" align="center">
+						<v-tooltip right>
+							<template v-slot:activator="{ on, attrs }">
+								<v-btn
+									:icon="$vuetify.breakpoint.mdAndUp"
+									:block="$vuetify.breakpoint.smAndDown"
+									dark
+									large
+									color="accent"
+									v-bind="attrs"
+									v-on="on"
+									@click="clearEditor"
+								>
+									<v-icon large>backspace</v-icon>
+								</v-btn>
+							</template>
+							<span class="text-subtitle-1">Clear Code Editor</span>
+						</v-tooltip>
+					</v-col>
+				</v-row>
+			</v-col>
+			<!-- The two tables on the right -->
+			<v-col xs="12" sm="12" md="5" lg="5" cols="5">
+				<v-row align="center" justify="center" wrap>
+					<!-- Lexeme table Card -->
 					<v-col cols="12">
 						<v-card height="45vh" class="pa-2" elevation="13">
 							<v-card-title class="text-h4 font-weight-bold primary--text">
@@ -29,6 +92,7 @@
 						</v-card>
 					</v-col>
 					<v-col cols="12">
+						<!-- The Syntax Analysis Card -->
 						<v-card height="35vh" class="pa-2" elevation="13">
 							<v-card-title class="text-h4 font-weight-bold primary--text">
 								Syntax Analysis
@@ -81,6 +145,9 @@
 		methods: {
 			highlight(code) {
 				return highlight(code, languages.js);
+			},
+			clearEditor() {
+				this.code = "";
 			},
 		},
 		watch: {

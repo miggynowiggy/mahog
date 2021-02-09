@@ -53,10 +53,13 @@
 				</v-row>
 			</v-container>
 		</v-main>
-		<v-footer class="mt-4" height="60px">
+		<v-footer padless>
 			<v-row align="center" justify="center">
 				<v-col cols="12" align="center">
 					<p class="text-subtitle-1 primary--text darken-2">Mahog © 2021</p>
+					<p class="text-body-1 mt-n3 font-italic primary--text darken-2">
+						MattyBoi, Huwan, AlekNota, MiggyClutch
+					</p>
 				</v-col>
 			</v-row>
 		</v-footer>
