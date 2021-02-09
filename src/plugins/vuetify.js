@@ -5,14 +5,15 @@ import "font-awesome/css/font-awesome.min.css";
 
 const vuetify = new Vuetify({
 	icons: {
-		iconfont: "md" || "fa",
+		iconfont: "md" || "fa" || "mdi",
 	},
 	theme: {
 		themes: {
 			dark: {
 				primary: "#C0AD74",
 				secondary: "#1CC8EE",
-				error: "#b71c1c",
+				error: "#db2f2e",
+				accent: "#f7d253",
 			},
 		},
 	},
