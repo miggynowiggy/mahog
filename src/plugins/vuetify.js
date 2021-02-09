@@ -9,7 +9,7 @@ const vuetify = new Vuetify({
 	},
 	theme: {
 		themes: {
-			light: {
+			dark: {
 				primary: "#C0AD74",
 				secondary: "#1CC8EE",
 				error: "#b71c1c",
