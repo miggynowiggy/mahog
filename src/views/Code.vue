@@ -149,6 +149,9 @@
 			clearEditor() {
 				this.code = "";
 			},
+			runCode() {
+				this.$store.dispatch("lexical/ANALYZE", this.code);
+			},
 		},
 		watch: {
 			code(val) {

@@ -2,6 +2,7 @@ import Vue from "vue";
 import Vuex from "vuex";
 import keywords from "./modules/keywords";
 import symbols from "./modules/symbols";
+import lexical from './modules/lexical';
 
 Vue.use(Vuex);
 
@@ -21,5 +22,6 @@ export default new Vuex.Store({
 	modules: {
 		keywords,
 		symbols,
+		lexical
 	},
 });
