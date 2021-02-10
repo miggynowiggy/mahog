@@ -26,6 +26,7 @@
 									color="success"
 									v-bind="attrs"
 									v-on="on"
+									@click="runCode"
 								>
 									<v-icon x-large>play_circle_filled</v-icon>
 								</v-btn>
@@ -153,11 +154,7 @@
 				this.$store.dispatch("lexical/ANALYZE", this.code);
 			},
 		},
-		watch: {
-			code(val) {
-				console.log(val);
-			},
-		},
+		watch: {},
 	};
 </script>
 
