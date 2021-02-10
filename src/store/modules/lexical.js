@@ -1,3 +1,4 @@
+/* eslint-disable no-empty-pattern */
 export default {
 	namespaced: true,
 	state: {
@@ -8,6 +9,8 @@ export default {
 	actions: {
 		//Code the logic of the lexical analyzer here.
 		// @Params { code } - String, this is the code written by the user
-		ANALYZE({}, code) {},
+		ANALYZE({}, code) {
+			console.log(code);
+		},
 	},
 };
