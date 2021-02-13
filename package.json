@@ -5,12 +5,20 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "generate-grammar": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js"
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "jison": "^0.4.18",
+    "jison-lex": "^0.3.4",
+    "myna-parser": "^2.5.1",
+    "nearley": "^2.20.1",
+    "nearly": "^1.8.1",
     "prismjs": "^1.23.0",
     "register-service-worker": "^1.7.1",
+    "underscore": "^1.12.0",
+    "unicode-categories": "^0.9.1",
     "vue": "^2.6.11",
     "vue-prism-editor": "^1.2.2",
     "vue-router": "^3.2.0",
@@ -48,7 +56,9 @@
     "parserOptions": {
       "parser": "babel-eslint"
     },
-    "rules": {}
+    "rules": {
+      "no-unused-vars": "off"
+    }
   },
   "browserslist": [
     "> 1%",
