@@ -78,18 +78,19 @@
 				<v-row align="center" justify="center" wrap>
 					<!-- Lexeme table Card -->
 					<v-col cols="12">
-						<v-card height="45vh" class="pa-2" elevation="13">
+						<v-card height="55vh" class="pa-2" elevation="13">
 							<v-card-title class="text-h4 font-weight-bold primary--text">
 								Lexeme Table
 							</v-card-title>
-							<v-container>
+							<v-card-text>
 								<v-data-table
+									dense
 									:headers="lexemeHeader"
-									:items="lexemes"
+									:items="lexemeTable"
 									disable-sort
-									:items-per-page="-1"
+									:items-per-page="5"
 								></v-data-table>
-							</v-container>
+							</v-card-text>
 						</v-card>
 					</v-col>
 					<v-col cols="12">
@@ -100,6 +101,7 @@
 							</v-card-title>
 							<v-card-text>
 								<v-data-table
+									dense
 									:headers="syntaxHeader"
 									:items="syntaxes"
 									disable-sort
@@ -129,12 +131,17 @@
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			code: "?Type your code here",
+			code: `stone miggy = "waw this";\nduring(true) {\n\twater('qaqu!')\n}\n\nnumber age;\nif(miggy > 2) {\n\tnumber = 12;\n} elif(miggy == 'cream') {\n\tnumber = 11 - 2;\n} else {\n\tnumber = 0 - -12;\n}\n\nage++;\n\n\n@line Comment \n\nboolean totoo = logicA != 21;\nboolean another_22_u = !totoo;\nage = 12.345;\nage = 21;\n\nstr = 'wawers';`,
 			lexemeHeader: [
-				{ text: "Line", align: "center", sortable: "false", value: "" },
-				{ text: "Lexeme", align: "center", sortable: "false", value: "" },
+				{ text: "Line", align: "center", sortable: "false", value: "line" },
+				{ text: "Lexeme", align: "center", sortable: "false", value: "lexeme" },
 				{ text: "-->", align: "center", sortable: "false", value: "" },
-				{ text: "Token", align: "center", sortable: "false", value: "" },
+				{
+					text: "Token",
+					align: "center",
+					sortable: "false",
+					value: "token",
+				},
 			],
 			lexemes: [],
 			syntaxHeader: [
@@ -143,6 +150,9 @@
 			],
 			syntaxes: [],
 		}),
+		mounted() {
+			this.runCode();
+		},
 		methods: {
 			highlight(code) {
 				return highlight(code, languages.js);
@@ -150,8 +160,14 @@
 			clearEditor() {
 				this.code = "";
 			},
-			runCode() {
-				this.$store.dispatch("lexical/ANALYZE", this.code);
+			async runCode() {
+				await this.$store.dispatch("lexical/ANALYZE", this.code);
+				await this.$store.dispatch("syntax/ANALYZE", this.code);
+			},
+		},
+		computed: {
+			lexemeTable() {
+				return this.$store.getters["lexical/lexemes"];
 			},
 		},
 		watch: {},
