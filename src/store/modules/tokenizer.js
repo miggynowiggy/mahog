@@ -184,23 +184,9 @@ export default {
 					const isTokenSymbol = state.symbols.hasOwnProperty(token);
 					const isNextTokenSymbol = state.symbols.hasOwnProperty(nextToken);
 
-					// if consecutive tokens forms a floating number / number,
-					// consolidate it as a single string
-					if (token === "-" && isNextTokenNumber) {
-						numLitHolder += token;
-					} else if (isTokenNumber && isNextTokenDecimal) {
-						numLitHolder += token;
-					} else if (isTokenDecimal && isNextTokenNumber) {
-						numLitHolder += token;
-					} else if (isTokenNumber && !isNextTokenNumber) {
-						numLitHolder += token;
-						newLineContent.push(numLitHolder);
-						numLitHolder = "";
-					}
-
 					// If consecutive tokens forms a unary operator or other two-character symbols
 					// consoliate it as a single string
-					else if (!strFound && isTokenSymbol && isNextTokenSymbol) {
+					if (!strFound && isTokenSymbol && isNextTokenSymbol) {
 						symbolHolder += token;
 					} else if (
 						!strFound &&
@@ -210,6 +196,20 @@ export default {
 						symbolHolder += token;
 						newLineContent.push(symbolHolder);
 						symbolHolder = "";
+					}
+
+					// if consecutive tokens forms a floating number / number,
+					// consolidate it as a single string
+					else if (token === "-" && isNextTokenNumber) {
+						numLitHolder += token;
+					} else if (isTokenNumber && isNextTokenDecimal) {
+						numLitHolder += token;
+					} else if (isTokenDecimal && isNextTokenNumber) {
+						numLitHolder += token;
+					} else if (isTokenNumber && !isNextTokenNumber) {
+						numLitHolder += token;
+						newLineContent.push(numLitHolder);
+						numLitHolder = "";
 					}
 
 					// If the opening quotation mark is found, the following tokens will be
