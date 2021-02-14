@@ -1,128 +1,103 @@
-/* eslint-disable no-prototype-builtins */
-/* eslint-disable no-useless-escape */
-const JisonLex = require("jison-lex");
-const unicode = require("unicode-categories");
-// const _ = require("underscore");
+const moo = require("moo");
 
 export default {
-	namespaced: true,
-	state: {
-		tokenStream: [],
-		grammar: {
-			rules: [
-				["\\s+", "/* skip whitespace */"],
-
-				[`^stone$`, "return '<data_types>';"],
-				["^seed$", "return '<data_types>';"],
-				["^number$", "return '<data_types>';"],
-				["^string$", "return '<data_types>';"],
-				["^boolean$", "return '<data_types>';"],
-				["^object$", "return '<object>';"],
-				["^void$", "return '<void>';"],
-				["^null$", "return '<null>';"],
-				["^water$", "return 'water';"],
-				["^carve$", "return 'carve';"],
-				["^elif$", "return 'elsif';"],
-				["^if$", "return 'if';"],
-				["^else$", "return 'else';"],
-				["^cycle$", "return 'cycle';"],
-				["^during$", "return 'during';"],
-				["^skip$", "return '<control>';"],
-				["^continue$", "return '<control>';"],
-				["^return$", "return 'return';"],
-				["^size$", "return 'size';"],
-				["^num$", "return '<type_cast>';"],
-				["^str$", "return '<type_cast>';"],
-				["^bol$", "return '<type_cast>';"],
-				["^atChar$", "return '<str_access>';"],
-				[`^trim$`, "return '<precision>';"],
-				[`^\.absorb$`, "return '<arr_functions>';"],
-				[`^\.insert$`, "return '<arr_functions>';"],
-				[`^\.uproot$`, "return '<arr_functions>';"],
-				["^true$", "return '<bool_literal>';"],
-				["^false$", "return '<bool_literal>';"],
-
-				[`[\\@].+`, "return '<single_comment>';"],
-				[
-					`^-?[0-9]+(\.[0-9]+)?([eE][\-\+]?[0-9]+)?`,
-					"return '<number_literal>';",
-				],
-				[`[\\"].+[\\"]`, "return '<string_literal>';"],
-				[`[\\'].+[\\']`, "return '<string_literal>';"],
-				[
-					`${unicode.ECMA.identifier.source.replace("\\u03BB", "")}`,
-					"return '<identifier>';",
-				],
-
-				["[\\+]{2}", "return '<unary>';"],
-				["[\\-]{2}", "return '<unary>';"],
-				["[\\+][\\=]", "return '<assign_op>';"],
-				["[\\-][\\=]", "return '<assign_op>';"],
-				["[\\*][\\=]", "return '<assign_op>';"],
-				["[\\/][\\=]", "return '<assign_op>';"],
-				["[\\%][\\=]", "return '<assign_op>';"],
-				["[\\!][\\=]", "return '<relational_op>';"],
-				["\\={2}", "return '<relational_op>';"],
-				["\\>{1}", "return '<relational_op>';"],
-				["\\<{1}", "return '<realtional_op>';"],
-				["\\<\\=", "return '<realtional_op>';"],
-				["\\>\\=", "return '<realtional_op>';"],
-				["\\!{1}", "return '<logic_op>';"],
-				["\\&{2}", "return '<logic_op>';"],
-				["\\|{2}", "return '<logic_op>';"],
-				["\\+{1}", "return '<arith_op>';"],
-				["-{1}", "return '<arith_op>';"],
-				["\\*", "return '<arith_op>';"],
-				["\\/", "return '<arith_op>';"],
-				["\\%", "return '<arith_op>';"],
-				["\\=", "return '<assign_op>';"],
-				["\\(", "return '(';"],
-				["\\)", "return ')';"],
-				["\\]", "return ']';"],
-				["\\[", "return '[';"],
-				["{", "return '{';"],
-				["}", "return '}';"],
-				["\\;", "return ';';"],
-				["\\.", "return '.';"],
-				["\\,", "return ',';"],
-				["\\:", "return ':';"],
-			],
-		},
+  namespaced: true,
+  state: {
+    tokenStream: [],
+    rules: {
+      WS: /[ \t]+/,
+      NL: { match: /\n|\r\n|\r/, lineBreaks: true },
+      constType: "stone",
+      dataTypes: ["seed", "number", "boolean", "string"],
+      obj: "object",
+      voidFunc: "void",
+      nullState: "null",
+      water: "water",
+      carve: "carve",
+      ifState: "if",
+      elifState: "elif",
+      elseState: "else",
+      cycle: "cycle",
+      during: "during",
+      control: ["skip", "break"],
+      returnState: "return",
+      sizeState: "size",
+      typeCast: ["num", "str", "bol"],
+      strAccess: ".atChar",
+      trimState: "trim",
+      // arrFunc: [".absorb", ".insert", ".uproot"],
+      absorbState: ".absorb",
+      insertState: ".insert",
+      uprootState: ".upRoot",
+      boolLit: ["true", "false"],
+      negaFloatLit: /^-[0-9]{1,9}[\.][0-9]{1,9}/,
+      posFloatLit: /^[0-9]{1,9}[\.][0-9]{1,9}/,
+      nonNegaNumLit: /[0-9]{1,9}/,
+      negaNumLit: /^-[0-9]{1,9}/,
+      // stringLit: /^[\"|\'].+[\"|\']$/,
+      stringLit: [
+        {match: /"""[^]*?"""/, lineBreaks: true, value: x => x.slice(3, -3)},
+        {match: /"(?:\\["\\rn]|[^"\\\n])*?"/, value: x => x.slice(1, -1)},
+        {match: /'(?:\\['\\rn]|[^'\\\n])*?'/, value: x => x.slice(1, -1)}
+      ],
+      id: /[a-zA-Z_]{1}[a-zA-Z0-9_]{0,25}/,
+      comment: /^@.*\n/,
+      terminator: ";",
+      comma: ",",
+      period: ".",
+      colon: ":",
+      LParen: "(",
+      RParen: ")",
+      LSqr: "[",
+      RSqr: "]",
+      LCurl: "{",
+      RCurl: "}",
+      unary: ["++", "--"],
+      addOp: "+",
+      addAssignOp: "+=",
+      assignOp: ["=", "+=", "-=", "*=", "/=", "%="],
+      relateOp: ["!=", "==", ">", "<", ">=", "<="],
+      notOp: "!",
+      andOp: "&&",
+      orOp: "||",
+      arithOp: ["-", "*", "/", "%"]
+    }
+  },
+  getters: {
+		lexemes: (state) => state.tokenStream.map(token => { return {...token, arrow: "-->"} })
 	},
-	getters: {
-		lexemes: (state) => state.tokenStream,
-	},
-	actions: {
-		convertToPascal({ state }, token) {
-			const splitedStr = token.split("_");
-			return splitedStr.length ? token.split("_") : token;
-		},
-		async ANALYZE({ state, dispatch, commit }, code) {
-			const lexer = new JisonLex(state.grammar);
-			const tokenLines = await dispatch("tokenizer/ANALYZE", code, {
-				root: true,
-			});
-			console.log(tokenLines);
-			lexer.setInput(code);
+  mutations: {
+    CLEAR_LEXEMES(state) {
+      state.tokenStream = []
+    }
+  },
+  actions: {
+    async ANALYZE({ state, rootState, dispatch }, code) {
+      state.tokenStream = [];
+      try {
+        const tokenStream = [];
+        const parser = moo.compile(state.rules);
+        let reader = parser.reset(code);
 
-			const tokenStream = [];
-			const lineLength = tokenLines.length;
-			for (let lineIndex = 0; lineIndex < lineLength; lineIndex++) {
-				const line = tokenLines[lineIndex];
+        let token = " ";
+        while(token) {
+          token = reader.next();
+          // Ensure to only get the tokens that is not a whitespace
+          if (token && token.type !== 'NL' && token.type !== 'WS') {
+            tokenStream.push({
+              lexeme: token.value,
+              token: `<${token.type}>`,
+              line: token.line,
+              col: token.col
+            });
+          }
+        }
 
-				for (const token of line) {
-					const tokenDeets = {
-						lexeme: token,
-						token: lexer.lex(),
-						line: lineIndex + 1,
-					};
-					tokenStream.push(tokenDeets);
-					console.log(token, " -> ", tokenDeets.token);
-				}
-			}
-
-			state.tokenStream = tokenStream;
-			return tokenStream;
-		},
-	},
-};
+        state.tokenStream = tokenStream;
+      } catch(err) {
+        console.log(err.message);
+        rootState.syntax.errors.push({ message: err.message });
+      }
+    }
+  }
+}

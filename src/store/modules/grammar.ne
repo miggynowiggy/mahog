@@ -1,74 +1,29 @@
-@{%
-  const moo = require("moo");
-  let lexer = moo.compile({
-    ws: { match: /[\s\t]+/, lineBreaks: true },
-    num_lit: /^-?[0-9]{1,9}[|.][0-9]{1,9}/,
-    stringLiteral: /["|'].+["|']/,
-    boolLiteral: ["true", "true ", "false", "false "],
-    comment: /[\\@].+/,
-    id: /[a-zA-Z0-9_]{1,25}/,
-    dataTypes: ["seed", "seed ", "number", "number ", "string", "string ", "boolean", "boolean "],
-    constType: ["stone", "stone "],
-    object: ["object", "object "],
-    void: ["void", "void "],
-    null: "null",
-    if: ["if", "if "],
-    elif: ["elif", "elseif "],
-    else: ["else", "else "],
-    water: ["water", "water "],
-    carve: ["carve", "carve "],
-    cycle: ["cycle", "cycle "],
-    during: ["during", "during "],
-    control: ["break","break ", "skip", "skip "],
-    type_cast: ["num", "num ", "str", "str ", "bol", "bol "],
-    return: "return",
-    size: ["size", "size "],
-    arrFunctions: [".absorb", ".absorb ", ".insert", ".insert ", ".uproot", ".uproot "],
-    unary: ["++", "--"],
-    assignOp: ["+=", " += ", "-=", " -= ", "*=", " *= ", "%=", " %= ", "/=", " /= ", "=", " = "],
-    relationalOp: [">=", " >= ", "<=", " <= ", "!=", " != ", "==", " == "],
-    notOp: ["!", "! "],
-    logicalOp: ["&&", "||"],
-    arithOp: ["+", " + ", "-", " - ", "*", " * ", "%", " % ", "/", " / "],
-    "(": "(",
-    ")": ")",
-    "[": "[",
-    "]": "]",
-    "{": "{",
-    "}": "}",
-    ";": ";",
-    ".": ".",
-    ":": ":"
-  });
-%}
-
-@lexer lexer
-
-_ -> %ws
-
 program -> global | statement
 
 global -> global_declare
   | global
-  | "null"
+  | null
 
 global_declare
   -> const_declare
   | declare_data
-  | object
+  | object_dec
+  | null
 
-const_declare -> const_start _ %assign_op _ literals _ ";" | "null"
+const_declare
+  -> const_start "<assignOp>" literals "<terminator>"
+  | null
 
-const_start -> "stone" _ %id
+const_start -> "<constType>" "<id>"
 
-data_id -> %data_types _ %id
+declare_data -> data_id data_choices | null
 
-declare_data -> data_id _ data_choices
+data_id -> "<dataTypes>" "<id>"
 
 data_choices
-  -> %assign_op _ data_nonfunction _ ";"
+  -> "<assignOp>" data_nonfunction "<terminator>"
   | function_dec
-  | ";"
+  | "<terminator>"
 
 data_nonfunction
   -> array
@@ -86,8 +41,8 @@ expressions
   | string_expr
 
 arith_expression
-  -> arith_operand _ additional_arith
-  | "(" _ arith_operand _ additional_arith _ ")"
+  -> arith_operand additional_arith
+  | "<LParen>" arith_operand additional_arith "<RParen>"
 
 arith_operand
   -> id_choices
@@ -95,187 +50,182 @@ arith_operand
   | arith_expression
 
 additional_arith
-  -> arith_op _ arith_operand _ additional_arith
-  | "null"
+  -> "<arithOp>" arith_operand additional_arith
+  | null
 
 num_expr
-  -> num_operand _ additional_num
-  | "(" num_operand _ additional_num ")"
+  -> num_operand additional_num
+  | "<LParen>" num_operand additional_num "<RParen>"
 
 num_operand
   -> id_choices
   | num_literals
-  | positive_float_numlit
-  | negative_float_numlit
+  | "<posFlotLit>"
+  | "<negaFloatLit>"
   | num_expr
 
 additional_num
-  -> cond_operator _ num_operand _ additional_num
-  | "null"
+  -> cond_operator num_operand additional_num
+  | null
 
 bool_expr
-  -> bool_operand _ additional_bool
-  | "(" _ bool_operand _ additional_bool _ ")"
+  -> bool_operand additional_bool
+  | "<LParen>" bool_operand additional_bool "<RParen>"
 
 bool_operand
   -> id_choices
-  | bool_literal
+  | "<boolLit>"
   | bool_expr
-  | %not_op _ bool_expr
+  | "<notOp>" bool_expr
 
 additional_bool
-  -> bool_op _ bool_operand _ additional_bool
-  | "null"
+  -> bool_op bool_operand additional_bool
+  | null
 
 bool_op
-  -> relational_bool
-  | logic_op
+  -> relate_op
+  | "<logicOp>"
 
 string_expr
-  -> string_operand _ additional_string
-  | "(" string_operand _ additional_string ")"
+  -> string_operand additional_string
+  | "<LParen>" string_operand additional_string "<RParen>"
 
 string_operand
-  -> id_choices _ atchar
-  | str_literal _ atchar
+  -> id_choices atchar
+  | "<stringLit>" atchar
   | string_expr
 
 additional_string
-  -> string_op _ string_operand _ additional_string
-  | "null"
+  -> string_op string_operand additional_string
+  | null
 
 string_op
-  -> "+"
-  | relational_bool
-  | relational_num
+  -> "<addOp>"
+  | relate_op
 
 literals
   -> num_literals
-  | str_literal
-  | bool_literal
+  | "<stringLit>"
+  | "<boolLit>"
 
 num_literals
-  -> non_negative_numlit
-  | negative_numlit
-  | negative_float_numlit
-  | positive_float_numlit
+  -> "<negaFloatLit>"
+  | "<posFloatLit>"
+  | "<nonNegaNumLit>"
+  | "<negaNumLit>"
 
 non_negative_numlit
-  -> positive_numlit
-  | "0"
+  -> "<nonNegaNumLit>"
 
-array -> "[" _ arr_contents "]" _ arr_methods
+array -> "<LSqr>" arr_contents "<RSqr>" arr_methods
 
 arr_contents
-  -> "[" _ arr_2D _ "]" _ additional_2D_lit
-  | literals _ additional_lit
-  | "null"
+  -> "<LSqr>" arr_2D "<RSqr>" additional_2D_lit
+  | literals additional_lit
+  | null
 
 arr_2D
-  -> literals _ additional_lit
-  | "null"
+  -> literals additional_lit
+  | null
 
 additional_lit
-  -> "," _ literals _ additional_lit
-  | "null"
+  -> "<comma>" literals additional_lit
+  | null
 
 additional_2D_lit
-  ->"," _ "[" _ arr_2D _ "]" _ additional_2D_lit
-  | "null"
+  ->"<comma>" "<LSqr>" arr_2D "<RSqr>" additional_2D_lit
+  | null
 
 object_dec
-  -> "object" _ %id _ "=" _ "{" _ obj_props _ "}" _ ";"
+  -> "<obj>" "<id>" "<assignOp>" "<LCurl>" obj_props "<RCurl>" "<terminator>"
 
 obj_props
-  -> data_id _ ":" _ literals _ additional_props
+  -> data_id "<colon>" literals additional_props
 
 additional_props
-  -> "," _ obj_props
-  | "null"
+  -> "<comma>" obj_props
+  | null
 
 
 statement
-  -> desired_statement _ statement
-  | "null"
+  -> desired_statement statement
+  | null
 
 desired_statement
   -> declare_data
   | assign_statement
   | input_statement
-  | output_statements _ ";"
+  | output_statements "<terminator>"
   | loop_statement
   | if_statement
   | iterate_statement
   | return_statement
   | object_dec
   | obj_reassign
-  | function_call _ ";"
-  | array _ ";"
+  | function_call "<terminator>"
+  | array "<terminator>"
   | comment
 
 control
-  -> skip _ ";"
-  | break _ ";"
-  | "null"
+  -> "<control>" "<terminator>"
+  | null
 
-if_statement -> "if" _ "(" _ cond_choices _ ")" _ stmt_choices _ elif_statement _ else_statement
+if_statement -> "<ifState>" "<LParen>" cond_choices "<RParen>" stmt_choices elif_statement else_statement
 
 elif_statement
-  -> %elif _ "(" _ cond_choices _ ")" _ stmt_choices _ eliif_statement _ else_statement
-  | "null"
+  -> "<elifState>" "<LParen>" cond_choices "<RParen>" stmt_choices elif_statement else_statement
+  | null
 
 else_statement
-  -> "else" _ stmt_choices
-  | "null"
+  -> "<elseState>" stmt_choices
+  | null
 
 stmt_choices
   -> desired_statement
-  | "{" _ statement _ "}"
+  | "<LCurl>" statement "<RCurl>"
 
 cond_choices
-  -> "!" _ not_condition _ add_condition
-  | cond_operand _ add_condition
+  -> "<notOp>" not_condition add_condition
+  | cond_operand add_condition
 
 not_condition
   -> cond_choices
-  | "(" _ cond_operand _ ")"
+  | "<LParen>" cond_operand "<RParen>"
   | access_expr
-  | bool_literal
+  | "<boolLit>"
 
 add_condition
-  -> cond_operator _ cond_choices
-  | "null"
+  -> cond_operator cond_choices
+  | null
 
 cond_operator
-  -> %arith_op
-  | %relation_op
-  | %logical_op
+  -> "<arithOp>"
+  | "<addOp>"
+  | "<relateOp>"
+  | "<andOp>"
+  | "<orOp>"
 
 cond_operand
   -> access_expr
   | literals
-  | "(" _ nested_cond _ ")"
+  | "<LParen>" nested_cond "<RParen>"
   | expressions
 
 nested_cond
   -> cond_operand
   | cond_choices
 
-comment -> _ "@" _ comment_input
+comment -> "<comment>"
 
-comment_input
-  -> %string_literal
-  | %ws
-
-output -> %carve _ "(" _ output_statements _ ")" _ ";"
+output -> "<carve>" "<LParen>" output_statements "<RParen>" "<terminator>"
 
 output_statements
-  -> access_expr _ additional_access
-  | "null"
+  -> access_expr additional_access
+  | null
 
 additional_access
-  ->"," _ access_expr _ additional_access
-  | "null"
+  ->"<comma>" access_expr additional_access
+  | null
 
 access_expr
   -> variable_dec
@@ -287,90 +237,90 @@ assign_statement
   | boolid_stmt
 
 iterate_statement
-  -> id_choices _ unary _ ";"
-  | arr_access _ unary _ ";"
-  | object_access _ unary _ ";"
+  -> id_choices "<unary>" "<terminator>"
+  | arr_access "<unary>" "<terminator>"
+  | object_access "<unary>" "<terminator>"
 
-input_statement -> data_id _ %assign_op _ %water _ "(" _ variable_dec _ ")" _ ";"
+input_statement -> data_id "<assignOp>" "<water>" "<LParen>" variable_dec "<RParen>" "<terminator>"
 
 loop_statement
-  -> %cycle _ "(" _ for_init _ ";" _ cond_choices _ ";" _ iterate_statement _ ")" _ loopstmt_choices
-  | %during _ "(" _ cond_choices _ ")" _ loopstmt_choices
+  -> "<cycle>" "<LParen>" for_init "<terminator>" cond_choices "<terminator>" iterate_statement "<RParen>" loopstmt_choices
+  | "<during>" "<LParen>" cond_choices "<RParen>" loopstmt_choices
 
 loopstmt_choices
-  -> _ "{" _ statement _ control _ statement _ "}"
+  -> "<LCurl>" statement control statement "<RParen>"
   | desired_statement
-  | ";"
+  | "<terminator>"
 
 for_init
-  -> data_id _ %assign_op _ num_literals
-  | id %assign_op _ num_literals
-  | "null"
+  -> data_id "<assignOp>" num_literals
+  | "<id>" "<assignOp>" num_literals
+  | null
 
-declare_void -> "void" _ %id _ void_body
+declare_void -> "<voidFunc>" "<id>" void_body
 
-void_body -> _ "(" _ param _ ")" _ void_choices
+void_body -> "<LParen>" param "<RParen>" void_choices
 
-function_dec -> _ "(" _ param _ ")" _ funcstmt_choices
+function_dec -> "<LParen>" param "<RParen>" funcstmt_choices
 
 param
-  -> data_id _ add_param
-  | literals _ add_param
-  | data_types _ "[" _ "]" _ twoD_array _ %id _ add_param
-  | "null"
+  -> data_id add_param
+  | literals add_param
+  | "<dataTypes>" "<LSqr>" "<RSqr>" twoD_array "<id>" add_param
+  | null
 
 twoD_array
-  -> "[" _ "]"
-  | "null"
+  -> "<LSqr>" "<RSqr>"
+  | null
 
 add_param
-  -> "," _ param
-  | "null"
+  -> "<comma>" param
+  | null
 
 funcstmt_choices
   -> return_statement
-  | "{" _ statement _ return_statement _ "}"
+  | "<LCurl>" statement return_statement "<RCurl>"
 
 void_choices
   -> desired_statement
   | void_return
-  | "{" _ statement _ void_return _ "}"
+  | "<LCurl>" statement void_return "<RCurl>"
 
 void_return
-  -> "return;"
+  -> "<returnState>" "<terminator>"
 
-function_call -> %id _ "(" _ call_params _ ")"
+function_call -> "<id>" "<LParen>" call_params "<RParen>"
 
 call_params
-  -> access_expr _ addcall_params
-  | array _ addcall_params
-  | "null"
+  -> access_expr addcall_params
+  | array addcall_params
+  | null
 
 addcall_params
-  -> "," _ call_params
-  | "null"
+  -> "<comma>" call_params
+  | null
 
-obj_reassign -> object_access _ obj_assop _ ";"
+obj_reassign -> object_access obj_assop "<terminator>"
 
 obj_assop
-  -> assign_op _ data_nonfunction
-  | unary
+  -> "<assignOp>" data_nonfunction
+  | "<unary>"
 
 objprop_access
-  -> %id
+  -> "<id>"
   | arr_access
 
 object_access
-  -> %id _ "." _ objprop_access
-  | arr_access _ "." _ objprop_access
+  -> "<id>" "<period>" objprop_access
+  | arr_access "<period>" objprop_access
 
 arr_access
-  -> %id _ "[" _ arr_index _ "]" _ add_arr_access
-  | object_access _ "[" _ arr_index _ "]" _ add_arr_access
+  -> "<id>" "<LSqr>" arr_index "<RSqr>" add_arr_access
+  | object_access "<Lsqr>" arr_index "<RSqr>" add_arr_access
 
 add_arr_access
-  -> "[" _ arr_index _ "]"
-  | "null"
+  -> "<LSqr>" arr_index "<RSqr>"
+  | null
 
 arr_index
   -> non_negative_numlit
@@ -378,68 +328,60 @@ arr_index
 
 return_values
   -> access_expr
-  | "null"
+  | null
 
 return_statement
-  -> "return" _ return_values _ ";"
+  -> "<returnState>" return_values "<terminator>"
   | void_return
 
 relate_op
-  -> relational_bool
-  | relational_num
-
-relational_bool
-  -> "=="
-  | "!="
-
-relational_num
-  -> ">"
-  | "<"
-  | ">="
-  | "<="
+  -> "<relateOp>"
 
 numid_stmt
-  -> id_choices _ numid_op _ num_expr _ ";"
+  -> id_choices numid_op num_expr "<terminator>"
   | iterate_statement
 
 numid_op
-  -> "="
+  -> "<assignOp>"
   | cond_operator
 
-stringid_stmt -> id_choices _ stringid_op _ string_expr _ ";"
+stringid_stmt -> id_choices stringid_op string_expr "<terminator>"
 
-stringid_op -> "="
+stringid_op
+  -> "<addOp>"
+  | "<assignOp>"
 
-boolid_stmt -> "+="
-  | id_choices _ "=" _ bool_expr _ ";"
+boolid_stmt
+  -> "<assignOp>"
+  | id_choices "<assignOp>" bool_expr "<terminator>"
 
 id_choices
-  -> %id
+  -> "<id>"
   | arr_access
   | object_access
 
-type_cast -> %type_cast _ "(" _ type_cast_params _ ")" _ ";"
+type_cast -> "<typeCast>" "<LParen>" type_cast_params "<RParen>" "<terminator>"
 type_cast_params
   -> function_call
   | literals
   | expressions
   | id_choices
 
-size_func -> %size _ "(" _ size_params _ ")" _ ";"
+size_func -> "<sizeState>" "<LParen>" size_params "<RParen>" "<terminator>"
 size_params
   -> array
   | id_choices
   | string_expr
   | function_call
-  | str_literal
-  | "null"
+  | "<stringLit>"
+  | null
 
 arr_methods
-  -> ".absorb" _ "(" _ access_expr _ ")"
-  | ".insert" _ "(" _ arith_expression _ "," _ access_expr ")"
-  | ".uproot" _ "(" _ access_expr _ ")"
-  | "null"
+  -> "<absorbState>" "<LParen>" access_expr "<RParen>"
+  | "<insertState>" "<LParen>" arith_expression "<comma>" access_expr "<RParen>"
+  | "<uprootState>" "<LParen>" access_expr "<RParen>"
+  | null
 
-atchar -> ".atChar" _ "(" _ access_expr _ ")" _ ";" | "null"
+atchar -> "<strAccess>" "<LParen>" access_expr "<RParen>" "<terminator>" | null
 
-trim_func -> "trim" _ "(" _ access_expr _ ")" _ ";" | "null"
+trim_func -> "<trimState>" "<LParen>" access_expr "<RParen>" "<terminator>" | null

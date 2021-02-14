@@ -103,9 +103,9 @@
 								<v-data-table
 									dense
 									:headers="syntaxHeader"
-									:items="syntaxes"
+									:items="errorTable"
 									disable-sort
-									:items-per-page="-1"
+									:items-per-page="5"
 								></v-data-table>
 							</v-card-text>
 						</v-card>
@@ -126,16 +126,66 @@
 	import "prismjs/components/prism-clike";
 	import "prismjs/components/prism-javascript";
 	import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
+const code =
+`boolean isOK = true;
+seed _num = "2";
+number = 123456789.987654321;
+number arr = [1,2,3];
+string names = ["Alec","Miggy","Juan"];
+number twoD = [[1,2,3],[4,5,6],[7,8,9]];
+
+twoD.absorb([1, 3, 2]);
+twoD.insert(2, [1]);
+twoD.uproot();
+
+@taena comment token to
+
+if(isOK)
+  carve("nice");
+elif(isOK && num1 == 2)
+  carve("nice nice");
+else
+  carve("nice x3");
+
+num1 = 2;
+cycle(; isOK; num1++)
+  carve(num1);
+  if(num1 == 5)
+    isOK = false;
+
+isOK = true;
+number ctr = 0;
+during(!(!isOK) || (ctr < 3)){
+  carve(arr[ctr]);
+  ctr++;
+}
+
+number func(number x, number y) {
+  return x + y;
+}
+
+carve('hehe')
+
+number myNum = water("Enter num: ");
+
+object miggy = {
+	string name: "Miggy",
+	number age: 21,
+	boolean isLegal: true,
+	string subjs: ["CS", "IT", "MIS"],
+};
+`;
 
 	export default {
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			code: `stone miggy = "waw this";\nduring(true) {\n\twater('qaqu!')\n}\n\nnumber age;\nif(miggy > 2) {\n\tnumber = 12;\n} elif(miggy == 'cream') {\n\tnumber = 11 - 2;\n} else {\n\tnumber = 0 - -12;\n}\n\nage++;\n\n\n@line Comment \n\nboolean totoo = logicA != 21;\nboolean another_22_u = !totoo;\nage = 12.345;\nage = 21;\n\nstr = 'wawers';`,
+			// code: `stone miggy = "waw this";\nduring(true) {\n\twater('qaqu!')\n}\n\nnumber age;\nif(miggy > 2) {\n\tnumber = 12;\n} elif(miggy == 'cream') {\n\tnumber = 11 - 2;\n} else {\n\tnumber = 0 - -12;\n}\n\nage++;\n\n\n@line Comment \n\nboolean totoo = logicA != 21;\nboolean another_22_u = !totoo;\nage = 12.345;\nage = 21;\n\nstr = 'wawers';`,
+			code: code,
 			lexemeHeader: [
 				{ text: "Line", align: "center", sortable: "false", value: "line" },
 				{ text: "Lexeme", align: "center", sortable: "false", value: "lexeme" },
-				{ text: "-->", align: "center", sortable: "false", value: "" },
+				{ text: "-->", align: "center", sortable: "false", value: "arrow" },
 				{
 					text: "Token",
 					align: "center",
@@ -145,8 +195,7 @@
 			],
 			lexemes: [],
 			syntaxHeader: [
-				{ text: "Error Code", align: "center", sortable: "false", value: "" },
-				{ text: "Message", align: "center", sortable: "false", value: "" },
+				{ text: "Message", align: "left", sortable: "false", value: "message" },
 			],
 			syntaxes: [],
 		}),
@@ -159,6 +208,8 @@
 			},
 			clearEditor() {
 				this.code = "";
+				this.$store.dispatch("lexical/CLEAR_LEXEMES");
+				this.$store.dispatch("syntax/CLEAR_ERRORS");
 			},
 			async runCode() {
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
@@ -169,6 +220,9 @@
 			lexemeTable() {
 				return this.$store.getters["lexical/lexemes"];
 			},
+			errorTable() {
+				return this.$store.getters["syntax/errors"];
+			}
 		},
 		watch: {},
 	};
