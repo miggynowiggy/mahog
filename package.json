@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "yarn generate-grammar && vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "generate-grammar": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js"
@@ -12,6 +12,7 @@
     "core-js": "^3.6.5",
     "jison": "^0.4.18",
     "jison-lex": "^0.3.4",
+    "moo": "^0.5.1",
     "myna-parser": "^2.5.1",
     "nearley": "^2.20.1",
     "nearly": "^1.8.1",
@@ -57,7 +58,10 @@
       "parser": "babel-eslint"
     },
     "rules": {
-      "no-unused-vars": "off"
+      "no-unused-vars": "off",
+      "no-useless-escape": "off",
+      "no-undef": "off",
+      "no-empty-character-class": "off"
     }
   },
   "browserslist": [

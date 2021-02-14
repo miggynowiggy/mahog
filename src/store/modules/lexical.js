@@ -93,6 +93,10 @@ export default {
 		lexemes: (state) => state.tokenStream,
 	},
 	actions: {
+		convertToPascal({ state }, token) {
+			const splitedStr = token.split("_");
+			return splitedStr.length ? token.split("_") : token;
+		},
 		async ANALYZE({ state, dispatch, commit }, code) {
 			const lexer = new JisonLex(state.grammar);
 			const tokenLines = await dispatch("tokenizer/ANALYZE", code, {
