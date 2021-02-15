@@ -12,14 +12,14 @@ statement
 
 desired_statement
   -> declare_data
+  | object_dec
   | assign_statement
   | input_statement
-  | output_statements "<terminator>"
+  | output
   | loop_statement
   | if_statement
   | iterate_statement
   | return_statement
-  | object_dec
   | obj_reassign
   | function_call "<terminator>"
   | array "<terminator>"
@@ -43,7 +43,7 @@ data_nonfunction
 
 const_declare
   -> const_start "<assignOp>" literals "<terminator>"
-  | null
+  | const_start "<terminator>"
 
 const_start -> "<constType>" "<id>"
 
@@ -180,7 +180,7 @@ else_statement
 
 stmt_choices
   -> desired_statement
-  | "<LCurl>" statement "<RCurl>"
+  | "<LCurl>" desired_statement "<RCurl>"
 
 cond_choices
   -> "<notOp>" not_condition add_condition

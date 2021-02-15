@@ -102,7 +102,7 @@
 				<!-- The Syntax Analysis Card -->
 				<v-card class="pa-2" elevation="13">
 					<v-card-title class="text-h4 font-weight-bold primary--text">
-						Syntax Analysis
+						Errors
 					</v-card-title>
 					<v-card-text>
 						<v-data-table
@@ -130,7 +130,7 @@
 	import "prismjs/components/prism-javascript";
 	import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
 const code =
-`boolean isOK = true;
+`
 seed something;
 seed _num = "2";
 number wow = 123456789.987654321;
@@ -186,8 +186,8 @@ object miggy = {
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			code: `stone miggy = "waw this";\nseed nums = -21;\n\nobject miggy = {\n\tnumber age: -21.90,\n\tstring name: "miggy"\n};\n\nstring names = ["juan", 'alec', "matt"];\nnumber ages = [];`,
-			// code: code,
+			// code: `@stone miggy = "waw this";\nseed nums = -21;\n\nobject miggy = {\n\tnumber age: -21.90,\n\tstring name: "miggy"\n};\n\nstring names = ["juan", 'alec', "matt"];\nnumber ages = [];`,
+			code: code,
 			playLoading: false,
 			lexemeHeader: [
 				{ text: "Line", align: "center", sortable: "false", value: "line" },

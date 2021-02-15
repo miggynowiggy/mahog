@@ -6,6 +6,7 @@ global
   | const_declare global
   | object_dec global
   | array global
+  | comment global
 
 const_declare -> const_start const_choices
 
@@ -131,3 +132,6 @@ arith_operand
 additional_arith
   -> "<arithOp>" arith_operand additional_arith
   | null
+
+# Comments
+comment -> "<comment>"
