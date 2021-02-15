@@ -16,7 +16,7 @@ export default {
 		}
 	},
 	actions: {
-		ANALYZE({ state, rootState }, code) {
+		async ANALYZE({ state, rootState }, code) {
 			try {
 				const tagaParse = new nearley.Parser(
 					nearley.Grammar.fromCompiled(grammar)
@@ -39,8 +39,9 @@ export default {
 				// console.log(stringifiedLines);
 				for (let line of stringifiedLines) {
 					console.log(line);
-					tagaParse.feed(line)
-					console.log(tagaParse.results.flat())
+					await tagaParse.feed(line);
+					const { results } = tagaParse;
+					console.log(results);
 				}
 
 			} catch(err) {
