@@ -26,23 +26,30 @@ export default {
 				let stringifiedToken = "";
 				let stringifiedLines = [];
 				for (const token of tokenStream) {
-					if (token.token === '<NL>' && stringifiedToken !== "") {
-						stringifiedLines.push(stringifiedToken);
-						stringifiedToken = "";
-					} else {
-						stringifiedToken += token.token;
-					}
+					stringifiedToken += token.token;
 				}
+				// for (const token of tokenStream) {
+				// 	if (token.token === '<NL>' && stringifiedToken !== '') {
+				// 		stringifiedLines.push(stringifiedToken);
+				// 		stringifiedToken = "";
+				// 	} else {
+				// 		stringifiedToken += token.token;
+				// 	}
+				// }
 
 				// tagaParse.feed(stringifiedToken)
 				// console.log(tagaParse.results);
 				// console.log(stringifiedLines);
-				for (let line of stringifiedLines) {
-					console.log(line);
-					await tagaParse.feed(line);
-					const { results } = tagaParse;
-					console.log(results);
-				}
+				// for (let line of stringifiedLines) {
+				// 	console.log(line);
+				// 	await tagaParse.feed(line);
+				// 	const { results } = tagaParse;
+				// 	console.log(results);
+				// }
+				console.log(stringifiedToken);
+				tagaParse.feed(stringifiedToken);
+				const { results } = tagaParse;
+				console.log(results);
 
 			} catch(err) {
 				console.error(err.message);

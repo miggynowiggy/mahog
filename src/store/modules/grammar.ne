@@ -2,9 +2,9 @@
 input -> global
 
 global
-  -> data_declare
-  | const_declare
-  | null
+  -> data_declare global
+  | const_declare global
+  | object_dec global
 
 const_declare -> const_start const_choices
 
@@ -13,23 +13,35 @@ const_start -> "<constType>" "<id>"
 const_choices
   -> "<assignOp>" data_nonfunction "<terminator>"
   | "<terminator>"
-  | null
 
-
-data_declare -> data_id data_follow | null
+data_declare -> data_id data_follow
 data_id -> "<dataTypes>" "<id>"
 
 data_follow
   -> "<assignOp>" data_nonfunction "<terminator>"
   | "<terminator>"
-  | null
 
 data_nonfunction
-  -> literals {% id %}
+  -> literals
   | id_choices
 
+object_dec
+  -> "<obj>" "<id>" "<assignOp>" "<LCurl>" obj_props "<RCurl>" "<terminator>"
+
+obj_props
+  -> data_id "<colon>" literals additional_props
+
+additional_props
+  -> "<comma>" obj_props
+  | null
+
+literals
+  -> num_lit
+  | str_lit
+  | bool_lit
+
 num_lit
-  -> float_lit {% id %}
+  -> float_lit
   | "<nonNegaNumLit>"
   | "<negaNumLit>"
 
@@ -42,11 +54,6 @@ str_lit
 
 bool_lit
   -> "<boolLit>"
-
-literals
-  -> num_lit {% id %}
-  | str_lit {% id %}
-  | bool_lit {% id %}
 
 id_choices
   -> "<id>"

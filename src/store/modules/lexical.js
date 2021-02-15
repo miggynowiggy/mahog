@@ -84,7 +84,7 @@ export default {
         while(token) {
           token = reader.next();
           // Ensure to only get the tokens that is not a whitespace
-          if (token && token.type !== 'WS') {
+          if (token && token.type !== 'NL' && token.type !== 'WS') {
             tokenStream.push({
               lexeme: token.value,
               arrow: "-->",
