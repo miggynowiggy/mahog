@@ -16,55 +16,39 @@ export default {
 		}
 	},
 	actions: {
-		async assembleRelatedTokens({ state }, tokenStream) {
-			let bodyFound = false;
-			const newLines = [];
+		async assembleTokens({ state }, tokenStream) {
 			let assembledLine = "";
+
 			for (const tokenDeets of tokenStream) {
 				const { token } = tokenDeets;
-
-				if (token === '<LCurl>') {
-					bodyFound = true;
-					assembledLine += token
-				} else if (bodyFound && token === "<terminator>") {
-					assembledLine += token;
-					newLines.push(assembledLine);
-					assembledLine = "";
-					bodyFound = false;
-				} else if (!bodyFound && token === "<terminator>") {
-					assembledLine += token;
-					newLines.push(assembledLine);
-					assembledLine = "";
-				} else {
-					assembledLine += token;
-				}
+				assembledLine += token;
 			}
-			return newLines.filter(line => line !== '');
+
+			return assembledLine;
 		},
 		async ANALYZE({ state, rootState, dispatch }, code) {
-			try {
-				const tagaParse = new nearley.Parser(
-					nearley.Grammar.fromCompiled(grammar)
-				);
-				let tokenStream = [...rootState.lexical.tokenStream];
+			const tagaParse = new nearley.Parser(
+				nearley.Grammar.fromCompiled(grammar)
+			);
+			let tokenStream = [...rootState.lexical.tokenStream];
 
-				const lines = await dispatch("assembleRelatedTokens", tokenStream);
+			const lines = await dispatch("assembleTokens", tokenStream);
+			try {
 				console.log(lines);
 
 				// tagaParse.feed(stringifiedToken)
 				// console.log(tagaParse.results);
 				// console.log(stringifiedLines);
-				for (let line of lines) {
-					console.log(line);
-					await tagaParse.feed(line);
-					const { results } = tagaParse;
-					console.log(results);
-				}
+				// for (let line of lines) {
+				// 	console.log(line);
+				// 	await tagaParse.feed(line);
+				// 	const { results } = tagaParse;
+				// 	console.log(results);
+				// }
 
-				// console.log(stringifiedToken);
-				// tagaParse.feed(stringifiedToken);
-				// const { results } = tagaParse;
-				// console.log(results);
+				tagaParse.feed(lines);
+				const { results } = tagaParse;
+				console.log(results);
 
 			} catch(err) {
 				console.error(err.message);
