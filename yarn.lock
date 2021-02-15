@@ -5808,11 +5808,6 @@ nearley@^2.20.1:
     railroad-diagrams "^1.0.0"
     randexp "0.4.6"
 
-nearly@^1.8.1:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/nearly/-/nearly-1.8.1.tgz#69f08a3e79e5b658a27394f55d526f5300d009f0"
-  integrity sha1-afCKPnnltliic5T1XVJvUwDQCfA=
-
 negotiator@0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.2.tgz#feacf7ccf525a77ae9634436a64883ffeca346fb"

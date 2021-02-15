@@ -1,4 +1,4 @@
-program -> global {% id %}
+program -> global
 
 global
   -> const_declare
@@ -13,7 +13,7 @@ data_id -> "<dataTypes>" "<id>"
 data_choices
   -> "<assignOp>" data_nonfunction "<terminator>"
   | function_dec
-  | "<terminator>" {% id %}
+  | "<terminator>"
   | null
 
 data_nonfunction
@@ -72,7 +72,7 @@ bool_expr
 
 bool_operand
   -> id_choices
-  | "<boolLit>" {% id %}
+  | "<boolLit>"
   | bool_expr
   | "<notOp>" bool_expr
 
@@ -98,14 +98,14 @@ additional_string
   | null
 
 string_op
-  -> "<addOp>" {% id %}
-  | "<addAssignOp>" {% id %}
+  -> "<addOp>"
+  | "<addAssignOp>"
   | relate_op
 
 literals
   -> num_literals
-  | "<stringLit>" {% id %}
-  | "<boolLit>" {% id %}
+  | "<stringLit>"
+  | "<boolLit>"
 
 num_literals
   -> "<negaFloatLit>"

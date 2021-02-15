@@ -5,6 +5,7 @@ global
   -> data_declare global
   | const_declare global
   | object_dec global
+  | array global
 
 const_declare -> const_start const_choices
 
@@ -33,6 +34,25 @@ obj_props
 
 additional_props
   -> "<comma>" obj_props
+  | null
+
+array -> "<LSqr>" arr_contents "<RSqr>" arr_methods
+
+arr_contents
+  -> "<LSqr>" arr_2D "<RSqr>" additional_2D_lit
+  | literals additional_lit
+  | null
+
+arr_2D
+  -> literals additional_lit
+  | null
+
+additional_lit
+  -> "<comma>" literals additional_lit
+  | null
+
+additional_2D_lit
+  ->"<comma>" "<LSqr>" arr_2D "<RSqr>" additional_2D_lit
   | null
 
 literals
