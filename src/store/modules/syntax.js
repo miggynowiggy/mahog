@@ -45,7 +45,7 @@ export default {
 				}
 
 			} catch(err) {
-				console.log(err.message);
+				console.error(err.message);
 				state.errors.push({ message: err.message });
 			}
 		},
