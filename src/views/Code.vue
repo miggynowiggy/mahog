@@ -186,7 +186,7 @@ object miggy = {
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			code: `stone miggy = "waw this";\nseed nums = -21;\n\nobject miggy = {\n\tnumber age: -21.90, string name: "miggy"\n};`,
+			code: `stone miggy = "waw this";\nseed nums = -21;\n\nobject miggy = {\n\tnumber age: -21.90,\n\tstring name: "miggy"\n};\n\nstring names = ["juan", 'alec', "matt"];\nnumber ages = [];`,
 			// code: code,
 			playLoading: false,
 			lexemeHeader: [

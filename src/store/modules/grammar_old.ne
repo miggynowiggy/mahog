@@ -1,10 +1,29 @@
-program -> global
+program -> statement
 
-global
-  -> const_declare
-  | declare_data
+# global
+#   -> const_declare
+#   | declare_data
+#   | object_dec
+#   | statement
+
+statement
+  -> desired_statement statement
+  | null
+
+desired_statement
+  -> declare_data
+  | assign_statement
+  | input_statement
+  | output_statements "<terminator>"
+  | loop_statement
+  | if_statement
+  | iterate_statement
+  | return_statement
   | object_dec
-  | statement
+  | obj_reassign
+  | function_call "<terminator>"
+  | array "<terminator>"
+  | comment
 
 declare_data -> data_id data_choices
 
@@ -144,26 +163,6 @@ obj_props
 additional_props
   -> "<comma>" obj_props
   | null
-
-
-statement
-  -> desired_statement statement
-  | null
-
-desired_statement
-  -> declare_data
-  | assign_statement
-  | input_statement
-  | output_statements "<terminator>"
-  | loop_statement
-  | if_statement
-  | iterate_statement
-  | return_statement
-  | object_dec
-  | obj_reassign
-  | function_call "<terminator>"
-  | array "<terminator>"
-  | comment
 
 control
   -> "<control>" "<terminator>"
