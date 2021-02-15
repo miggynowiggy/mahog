@@ -21,26 +21,27 @@ export default {
 				const tagaParse = new nearley.Parser(
 					nearley.Grammar.fromCompiled(grammar)
 				);
-				const tokenStream = [...rootState.lexical.tokenStream];
-				// console.log(rootState.lexical.tokenStream);
+				let tokenStream = [...rootState.lexical.tokenStream];
+
 				let stringifiedToken = "";
-				// let stringifiedLines = [];
-				// for (const token of tokenStream) {
-				// 	if (token.token === '<NL>') {
-				// 		stringifiedLines.push(stringifiedToken);
-				// 	} else {
-				// 		stringifiedToken += token.token;
-				// 	}
-				// }
+				let stringifiedLines = [];
 				for (const token of tokenStream) {
-					stringifiedToken += token.token;
+					if (token.token === '<NL>' && stringifiedToken !== "") {
+						stringifiedLines.push(stringifiedToken);
+						stringifiedToken = "";
+					} else {
+						stringifiedToken += token.token;
+					}
 				}
-				tagaParse.feed(stringifiedToken)
-				console.log(tagaParse.results);
-				// for (const line of stringifiedLines) {
-				// 	console.log(line);
-				// 	console.log(tagaParse.feed(line));
-				// }
+
+				// tagaParse.feed(stringifiedToken)
+				// console.log(tagaParse.results);
+				// console.log(stringifiedLines);
+				for (let line of stringifiedLines) {
+					console.log(line);
+					tagaParse.feed(line)
+					console.log(tagaParse.results.flat())
+				}
 
 			} catch(err) {
 				console.log(err.message);
