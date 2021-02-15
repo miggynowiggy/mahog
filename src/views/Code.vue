@@ -16,11 +16,12 @@
 			<v-col cols="12" sm="12" md="1" lg="1">
 				<v-row align="center" justify="center" wrap>
 					<v-col xs="10" sm="10" md="12" lg="12" align="center">
-						<v-tooltip right>
+						<v-tooltip top>
 							<template v-slot:activator="{ on, attrs }">
 								<v-btn
 									:icon="$vuetify.breakpoint.mdAndUp"
 									:block="$vuetify.breakpoint.smAndDown"
+									:loading="playLoading"
 									dark
 									x-large
 									color="success"
@@ -53,7 +54,7 @@
 						</v-tooltip>
 					</v-col>
 					<v-col xs="10" sm="10" md="12" lg="12" align="center">
-						<v-tooltip right>
+						<v-tooltip bottom>
 							<template v-slot:activator="{ on, attrs }">
 								<v-btn
 									:icon="$vuetify.breakpoint.mdAndUp"
@@ -78,7 +79,7 @@
 				<v-row align="center" justify="center" wrap>
 					<!-- Lexeme table Card -->
 					<v-col cols="12">
-						<v-card height="55vh" class="pa-2" elevation="13">
+						<v-card height="80vh" class="pa-2" elevation="13">
 							<v-card-title class="text-h4 font-weight-bold primary--text">
 								Lexeme Table
 							</v-card-title>
@@ -88,29 +89,31 @@
 									:headers="lexemeHeader"
 									:items="lexemeTable"
 									disable-sort
-									:items-per-page="5"
-								></v-data-table>
-							</v-card-text>
-						</v-card>
-					</v-col>
-					<v-col cols="12">
-						<!-- The Syntax Analysis Card -->
-						<v-card height="35vh" class="pa-2" elevation="13">
-							<v-card-title class="text-h4 font-weight-bold primary--text">
-								Syntax Analysis
-							</v-card-title>
-							<v-card-text>
-								<v-data-table
-									dense
-									:headers="syntaxHeader"
-									:items="errorTable"
-									disable-sort
-									:items-per-page="5"
+									:items-per-page="10"
 								></v-data-table>
 							</v-card-text>
 						</v-card>
 					</v-col>
 				</v-row>
+			</v-col>
+		</v-row>
+		<v-row align="center" justify="center" wrap>
+			<v-col cols="12">
+				<!-- The Syntax Analysis Card -->
+				<v-card class="pa-2" elevation="13">
+					<v-card-title class="text-h4 font-weight-bold primary--text">
+						Syntax Analysis
+					</v-card-title>
+					<v-card-text>
+						<v-data-table
+							dense
+							:headers="syntaxHeader"
+							:items="errorTable"
+							disable-sort
+							:items-per-page="5"
+						></v-data-table>
+					</v-card-text>
+				</v-card>
 			</v-col>
 		</v-row>
 	</v-container>
@@ -128,8 +131,11 @@
 	import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
 const code =
 `boolean isOK = true;
+seed something;
 seed _num = "2";
-number = 123456789.987654321;
+number wow = 123456789.987654321;
+number waw = -12.213;
+number there = -900;
 number arr = [1,2,3];
 string names = ["Alec","Miggy","Juan"];
 number twoD = [[1,2,3],[4,5,6],[7,8,9]];
@@ -180,8 +186,9 @@ object miggy = {
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			// code: `stone miggy = "waw this";\nduring(true) {\n\twater('qaqu!')\n}\n\nnumber age;\nif(miggy > 2) {\n\tnumber = 12;\n} elif(miggy == 'cream') {\n\tnumber = 11 - 2;\n} else {\n\tnumber = 0 - -12;\n}\n\nage++;\n\n\n@line Comment \n\nboolean totoo = logicA != 21;\nboolean another_22_u = !totoo;\nage = 12.345;\nage = 21;\n\nstr = 'wawers';`,
-			code: code,
+			code: `stone miggy = "waw this";\nseed nums;\n`,
+			// code: code,
+			playLoading: false,
 			lexemeHeader: [
 				{ text: "Line", align: "center", sortable: "false", value: "line" },
 				{ text: "Lexeme", align: "center", sortable: "false", value: "lexeme" },
@@ -208,12 +215,17 @@ object miggy = {
 			},
 			clearEditor() {
 				this.code = "";
-				this.$store.dispatch("lexical/CLEAR_LEXEMES");
-				this.$store.dispatch("syntax/CLEAR_ERRORS");
+				this.$store.commit("lexical/CLEAR_LEXEMES");
+				this.$store.commit("syntax/CLEAR_ERRORS");
 			},
 			async runCode() {
+				if (!this.code) return;
+				this.playLoading = true;
+				this.$store.commit("lexical/CLEAR_LEXEMES");
+				this.$store.commit("syntax/CLEAR_ERRORS");
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
 				await this.$store.dispatch("syntax/ANALYZE", this.code);
+				this.playLoading = false;
 			},
 		},
 		computed: {
