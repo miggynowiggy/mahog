@@ -8,6 +8,7 @@ export default {
       WS: /[ \t]+/,
       NL: { match: /\n|\r\n|\r/, lineBreaks: true },
       constType: "stone",
+      typeCast: [/^num$/, /^str$/, /^bol$/],
       dataTypes: ["seed", "number", "boolean", "string"],
       obj: "object",
       voidFunc: "void",
@@ -22,7 +23,6 @@ export default {
       control: ["skip", "break"],
       returnState: "return",
       sizeState: "size",
-      typeCast: ["num", "str", "bol"],
       strAccess: ".atChar",
       trimState: "trim",
       // arrFunc: [".absorb", ".insert", ".uproot"],
@@ -30,10 +30,10 @@ export default {
       insertState: ".insert",
       uprootState: ".upRoot",
       boolLit: ["true", "false"],
-      negaFloatLit: /^-[0-9]{1,9}[\.][0-9]{1,9}/,
-      posFloatLit: /^[0-9]{1,9}[\.][0-9]{1,9}/,
       nonNegaNumLit: /[0-9]{1,9}/,
-      negaNumLit: /^-[0-9]{1,9}/,
+      negaNumLit: /-[0-9]{1,9}/,
+      negaFloatLit: /-[0-9]{1,9}[\.][0-9]{1,9}/,
+      posFloatLit: /[0-9]{1,9}[\.][0-9]{1,9}/,
       // stringLit: /^[\"|\'].+[\"|\']$/,
       stringLit: [
         {match: /"""[^]*?"""/, lineBreaks: true, value: x => x.slice(3, -3)},
@@ -64,7 +64,7 @@ export default {
     }
   },
   getters: {
-		lexemes: (state) => state.tokenStream.map(token => { return {...token, arrow: "-->"} })
+		lexemes: (state) => state.tokenStream.filter(token => token.token !== '<NL>')
 	},
   mutations: {
     CLEAR_LEXEMES(state) {
@@ -77,15 +77,17 @@ export default {
       try {
         const tokenStream = [];
         const parser = moo.compile(state.rules);
+        code += "\n";
         let reader = parser.reset(code);
 
         let token = " ";
         while(token) {
           token = reader.next();
           // Ensure to only get the tokens that is not a whitespace
-          if (token && token.type !== 'NL' && token.type !== 'WS') {
+          if (token && token.type !== 'WS') {
             tokenStream.push({
               lexeme: token.value,
+              arrow: "-->",
               token: `<${token.type}>`,
               line: token.line,
               col: token.col
