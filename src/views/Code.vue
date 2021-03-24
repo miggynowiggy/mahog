@@ -129,8 +129,7 @@
 	import "prismjs/components/prism-clike";
 	import "prismjs/components/prism-javascript";
 	import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
-const code =
-`
+	const code = `
 seed something;
 seed _num = "2";
 number wow = 123456789.987654321;
@@ -144,7 +143,13 @@ twoD.absorb([1, 3, 2]);
 twoD.insert(2, [1]);
 twoD.uproot();
 
-@taena comment token to
+@this is some comment
+
+@?
+	multi lines
+	comment
+	waw
+?@
 
 if(isOK)
   carve("nice");
@@ -234,7 +239,7 @@ object miggy = {
 			},
 			errorTable() {
 				return this.$store.getters["syntax/errors"];
-			}
+			},
 		},
 		watch: {},
 	};
