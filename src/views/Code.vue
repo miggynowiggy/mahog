@@ -132,12 +132,14 @@
 	const code = `
 seed something;
 seed _num = "2";
-number wow = 123456789.987654321;
-number waw = -12.213;
-number there = -900;
+number wow = 1223456789.987654321;
+number waw = ~12.213;
+number there = ~900;
 number arr = [1,2,3];
 string names = ["Alec","Miggy","Juan"];
 number twoD = [[1,2,3],[4,5,6],[7,8,9]];
+boolean isLegal = true;
+isLegal = false;
 
 twoD.absorb([1, 3, 2]);
 twoD.insert(2, [1]);
@@ -146,38 +148,40 @@ twoD.uproot();
 @this is some comment
 
 @?
-	multi lines
-	comment
-	waw
+multi
+line-height
+comments
 ?@
 
-if(isOK)
-  carve("nice");
-elif(isOK && num1 == 2)
-  carve("nice nice");
-else
-  carve("nice x3");
+if(isOK) {
+	carve("nice");
+} elif(isOK && num1 == 2) {
+	carve("nice nice");
+} else {
+	carve("nice x3");
+}
 
-num1 = 2;
-cycle(; isOK; num1++)
+cycle(number num1 = 2; isOK; num1++) {
   carve(num1);
-  if(num1 == 5)
+  if(num1 == 5) {
     isOK = false;
+  }
+}
 
 isOK = true;
 number ctr = 0;
 during(!(!isOK) || (ctr < 3)){
   carve(arr[ctr]);
-  ctr++;
+  ctr--;
 }
 
 number func(number x, number y) {
   return x + y;
 }
 
-carve('hehe')
+carve('hehe');
 
-number myNum = water("Enter num: ");
+string myNum = water("Enter num: ");
 
 object miggy = {
 	string name: "Miggy",
@@ -229,7 +233,7 @@ object miggy = {
 				this.$store.commit("lexical/CLEAR_LEXEMES");
 				this.$store.commit("syntax/CLEAR_ERRORS");
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
-				await this.$store.dispatch("syntax/ANALYZE", this.code);
+				// await this.$store.dispatch("syntax/ANALYZE", this.code);
 				this.playLoading = false;
 			},
 		},
