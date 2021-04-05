@@ -21,7 +21,7 @@ export default {
 
 			for (const tokenDeets of tokenStream) {
 				const { token } = tokenDeets;
-				assembledLine += token;
+				assembledLine += token + " ";
 			}
 
 			return assembledLine;
@@ -32,23 +32,13 @@ export default {
 			);
 			let tokenStream = [...rootState.lexical.tokenStream];
 
-			const lines = await dispatch("assembleTokens", tokenStream);
 			try {
-				console.log(lines);
-
-				// tagaParse.feed(stringifiedToken)
-				// console.log(tagaParse.results);
-				// console.log(stringifiedLines);
-				// for (let line of lines) {
-				// 	console.log(line);
-				// 	await tagaParse.feed(line);
-				// 	const { results } = tagaParse;
-				// 	console.log(results);
-				// }
-
-				tagaParse.feed(lines);
-				const { results } = tagaParse;
-				console.log(results);
+				for (const token of tokenStream) {
+					console.log(token.token);
+					tagaParse.feed(token.token);
+					const { results } = tagaParse;
+					console.log(results);
+				}
 
 			} catch(err) {
 				console.error(err.message);

@@ -136,6 +136,17 @@ stone wawThisIsLong = 21;
 number wow = 123456789.987654321;
 number waw = ~12.213;
 number there = ~900;
+boolean isLegal = true;
+names = ["Some", "Valuable", "String"];
+`;
+
+	const code_1 = `
+seed something;
+seed _num = "2";
+stone wawThisIsLong = 21;
+number wow = 123456789.987654321;
+number waw = ~12.213;
+number there = ~900;
 number arr = [1,2,3];
 string names = ["Alec","Miggy","Juan"];
 number twoD = [[1,2,3],[4,5,6],[7,8,9]];
@@ -237,7 +248,7 @@ object miggy = {
 				this.$store.commit("syntax/CLEAR_ERRORS");
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
 				await this.$store.dispatch("lexical/ANALYZE_DELIMITERS");
-				// await this.$store.dispatch("syntax/ANALYZE", this.code);
+				await this.$store.dispatch("syntax/ANALYZE", this.code);
 				this.playLoading = false;
 			},
 		},
