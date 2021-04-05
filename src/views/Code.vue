@@ -132,7 +132,8 @@
 	const code = `
 seed something;
 seed _num = "2";
-number wow = 1223456789.987654321;
+stone wawThisIsLong = 21;
+number wow = 123456789.987654321;
 number waw = ~12.213;
 number there = ~900;
 number arr = [1,2,3];
@@ -211,7 +212,9 @@ object miggy = {
 			],
 			lexemes: [],
 			syntaxHeader: [
-				{ text: "Message", align: "left", sortable: "false", value: "message" },
+				{ text: "Code", align: "left", sortable: "false", value: "code" },
+				{ text: "Message", align: "center", sortable: "false", value: "message" },
+				{ text: "Line", align: "center", sortable: "false", value: "line" }
 			],
 			syntaxes: [],
 		}),
@@ -233,6 +236,7 @@ object miggy = {
 				this.$store.commit("lexical/CLEAR_LEXEMES");
 				this.$store.commit("syntax/CLEAR_ERRORS");
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
+				await this.$store.dispatch("lexical/ANALYZE_DELIMITERS");
 				// await this.$store.dispatch("syntax/ANALYZE", this.code);
 				this.playLoading = false;
 			},
