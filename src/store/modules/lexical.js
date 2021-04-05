@@ -169,6 +169,8 @@ export default {
           return;
         }
 
+        // if the keyword after dot is not a method or a property
+        // throw an error
         const isPeriodInvalid = next.token !== 'arr_access' && next.token !== 'str_access' && next.token !== 'id';
         if (current.token === 'period' && isPeriodInvalid) {
           rootState.syntax.errors.push({
