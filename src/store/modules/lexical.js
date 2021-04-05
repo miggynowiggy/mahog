@@ -236,7 +236,7 @@ export default {
           return;
         }
 
-        if (current.token === 'control' && next.token !== 'L_paren') {
+        if (current.token === 'control' && next.token !== 'terminator') {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after "${current.lexeme}" keyword`,
@@ -257,33 +257,12 @@ export default {
           return;
         }
 
-        if (current.token === 'control' && next.token !== 'terminator') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const validNegaToken = next.token === 'id' || next.token === 'L_paren';
+        //negative symbols followed by another negative symbol is invalid
+        const validNegaToken = next.token === 'id' || next.token === 'L_paren' || state.delims.non_nega_num.includes(next.token);
         if (current.token === 'nega_sign' && !validNegaToken) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after negative symbol`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        // if negative sign was encountered before a negative float or whole number
-        // throw an error, since double negative is not supported
-        if (current.token === 'nega_sign' && state.delims.nega_num.includes(next.token)) {
-          rootState.syntax.errors.push({
-            code: 'invalid-double-negative',
-            message: `Negative sign cannot be followed by another negative symbol`,
             line: current.line,
             col: current.col
           });
