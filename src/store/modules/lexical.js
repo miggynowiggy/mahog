@@ -143,16 +143,16 @@ export default {
           return;
         }
 
-        const isTokenDataDec = current.token === 'data_type' || current.token === 'constant' || current.token === 'object';
-        if (isTokenDataDec && next.token !== 'id') {
-          rootState.syntax.errors.push({
-            code: 'invalid-token',
-            message: 'Missing variable name after data type',
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
+        // const isTokenDataDec = current.token === 'data_type' || current.token === 'constant' || current.token === 'object';
+        // if (isTokenDataDec && next.token !== 'id') {
+        //   rootState.syntax.errors.push({
+        //     code: 'invalid-token',
+        //     message: 'Missing variable name after data type',
+        //     line: current.line,
+        //     col: current.col
+        //   });
+        //   return;
+        // }
 
         // if consecutive tokens are both number literal, return an error
         // since this only means that the number literal exceeded the limit of characters
