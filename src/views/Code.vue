@@ -248,7 +248,7 @@ object miggy = {
 				this.$store.commit("syntax/CLEAR_ERRORS");
 				await this.$store.dispatch("lexical/ANALYZE", this.code);
 				await this.$store.dispatch("lexical/ANALYZE_DELIMITERS");
-				await this.$store.dispatch("syntax/ANALYZE", this.code);
+				// await this.$store.dispatch("syntax/ANALYZE", this.code);
 				this.playLoading = false;
 			},
 		},
