@@ -82,18 +82,18 @@ export default {
       arithOp: ["-", "*", "/", "%"]
     },
     delims: {
-      negaSign: ['NL', 'WS', 'id', 'L_paren'],
-      id: ['NL', 'WS', 'comma', 'period', 'terminator', 'unary', 'L_sqr', 'L_curl', 'L_paren'],
-      data_type: ['NL', 'WS', 'comment', 'multiline'],
-      keywords: ['NL', 'WS', 'L_paren'],
+      negaSign: ['NL', 'WS', 'id', 'LParen'],
+      id: ['NL', 'WS', 'comma', 'period', 'terminator', 'unary', 'LSqr', 'LCurl', 'LParen'],
+      dataType: ['NL', 'WS', 'comment', 'multiline'],
+      keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
-      else: ['NL', 'WS', 'L_curl'],
+      else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess']
     },
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
     numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
-    keywords: ['arr_access', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
+    keywords: ['strAccess', 'arrAccess', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
   },
   getters: {
 		lexemes: (state) => state.tokenStream.filter(token => token.token !== '<NL>' && token.token !== '<WS>')
@@ -193,8 +193,8 @@ export default {
           return;
         }
 
-        const dataTypeDelimInvalid = !state.delims.data_type.includes(next.token);
-        if (current.token === 'data_type' && dataTypeDelimInvalid) {
+        const dataTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        if (current.token === 'dataType' && dataTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
