@@ -84,12 +84,16 @@ export default {
     },
     delims: {
       negaSign: ['NL', 'WS', 'id', 'LParen'],
-      id: ['NL', 'WS', 'comma', 'period', 'terminator', 'unary', 'LSqr', 'LCurl', 'LParen'],
+      id: [
+        'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'unary', 'LSqr', 'LCurl', 'LParen',
+        'arithOp', 'addOp', 'notOp', 'andOp', 'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
+      ],
       dataType: ['NL', 'WS', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
       else: ['NL', 'WS', 'LCurl'],
-      period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess']
+      period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
+      notOp: ['id', 'LParen', 'boolLit']
     },
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
@@ -129,7 +133,6 @@ export default {
         RSqr: 'right square bracket',
       }
       newToken.token = expanded[token.token] ? expanded[token.token] : token.token;
-      console.log(newToken);
       return newToken;
     })
 	},
@@ -277,6 +280,17 @@ export default {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Invalid token after dot (.) symbol.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const notOpDelimInvalid = !state.delims.notOp.includes(next.token);
+        if (current.token === 'notOp' && notOpDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after not (!) operator.`,
             line: current.line,
             col: current.col
           });
