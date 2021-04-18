@@ -9,7 +9,7 @@ export default {
       id: {
         match: /[_a-zA-Z][a-zA-Z0-9]{0,20}/,
         type: moo.keywords({
-          "data_type": ["seed", "number", "string", "boolean"],
+          "dataType": ["seed", "number", "string", "boolean"],
           "typecast": ["num", "str", "bool"],
           "constant": "stone",
           "object": "object",
@@ -26,21 +26,21 @@ export default {
           "size": "size",
           "null": "null",
           "void": "void",
-          "bool_lit": ["true", "false"],
-          "arr_access": ["absorb", "insert", "uproot"],
-          "str_access": "atChar"
+          "boolLit": ["true", "false"],
+          "arrAccess": ["absorb", "insert", "uproot"],
+          "strAccess": "atChar"
         })
       },
 
       NL: {match: /\n|\r\n|\r/, lineBreaks: true},
       WS: /[ \t]+/,
 
-      nega_float_num_lit: /[~][0-9]{1,9}[\.][0-9]{1,9}/,
-      float_num_lit: /[0-9]{1,9}[\.][0-9]{1,9}/,
-      nega_num_lit: /[~][0-9]{1,9}/,
-      num_lit: /[0-9]{1,9}/,
+      negaFloatNumLit: /[~][0-9]{1,9}[\.][0-9]{1,9}/,
+      floatNumLit: /[0-9]{1,9}[\.][0-9]{1,9}/,
+      negaNumLit: /[~][0-9]{1,9}/,
+      numLit: /[0-9]{1,9}/,
 
-      string_lit: [
+      stringLit: [
         {match: /"""[^]*?"""/, lineBreaks: true, value: x => x.slice(3, -3)},
         {match: /"(?:\\["\\rn]|[^"\\\n])*?"/, value: x => x.slice(1, -1)},
         {match: /'(?:\\['\\rn]|[^'\\\n])*?'/, value: x => x.slice(1, -1)}
@@ -56,33 +56,33 @@ export default {
       comment: /[@].*\n/,
 
       unary: ["++", "--"],
-      add_assign_op: "+=",
-      relate_op: ["!=", "==", ">", "<", ">=", "<="],
-      assign_op: ["-=", "*=", "/=", "%="],
-      assign_op_only: "=",
+      addAssignOp: "+=",
+      assignOnlyOp: "=",
+      relateOp: ["!=", "==", ">", "<", ">=", "<="],
+      assignOp: ["-=", "*=", "/=", "%="],
       terminator: ";",
       comma: ",",
       period: ".",
       colon: ":",
-      L_paren: "(",
-      R_paren: ")",
-      L_sqr: "[",
-      R_sqr: "]",
-      L_curl: "{",
-      R_curl: "}",
-      add_op: "+",
-      not_op: "!",
-      and_op: "&&",
-      or_op: "||",
-      nega_sign: '~',
-      arith_op: ["-", "*", "/", "%"]
+      LParen: "(",
+      RParen: ")",
+      LSqr: "[",
+      RSqr: "]",
+      LCurl: "{",
+      RCurl: "}",
+      addOp: "+",
+      notOp: "!",
+      andOp: "&&",
+      orOp: "||",
+      negaSign: '~',
+      arithOp: ["-", "*", "/", "%"]
     },
     delims: {
-      non_nega_num: ['float_num_lit', 'nul_lit'],
-      nega_num: ['nega_float_lit', 'nega_num_lit'],
-      numbers: ['nega_float_num_lit', 'float_num_lit', 'nega_num_lit', 'num_lit'],
-      arr_access: ['absorb', 'insert', 'uproot'],
-      str_access: ['atChar'],
+      nonNegaNum: ['floatNumLit', 'nulLit'],
+      negaNum: ['negaFloatLit', 'negaNumLit'],
+      numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
+      arrAccess: ['absorb', 'insert', 'uproot'],
+      strAccess: ['atChar'],
       keywordsWithParen: ['NL', 'WS', 'L_paren'],
     }
   },
@@ -173,7 +173,7 @@ export default {
 
         // if the keyword after dot is not a method or a property
         // throw an error
-        const isPeriodInvalid = next.token !== 'arr_access' && next.token !== 'str_access' && next.token !== 'id';
+        const isPeriodInvalid = next.token !== 'arrAccess' && next.token !== 'strAccess' && next.token !== 'id';
         if (current.token === 'period' && isPeriodInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-dot-usage',
@@ -196,7 +196,7 @@ export default {
         }
 
         const isCurrentConditional = current.token === 'if' || current.token === 'elif';
-        if (isCurrentConditional && next.token !== 'L_paren') {
+        if (isCurrentConditional && next.token !== 'LParen') {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after "${current.lexeme}" keyword`,
@@ -227,8 +227,8 @@ export default {
         }
 
         //negative symbols followed by another negative symbol is invalid
-        const validNegaToken = next.token === 'id' || next.token === 'L_paren' || state.delims.non_nega_num.includes(next.token);
-        if (current.token === 'nega_sign' && !validNegaToken) {
+        const validNegaToken = next.token === 'id' || next.token === 'LParen' || state.delims.nonNegaNum.includes(next.token);
+        if (current.token === 'negaSign' && !validNegaToken) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after negative symbol`,

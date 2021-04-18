@@ -32,6 +32,14 @@ export default {
 			);
 			let tokenStream = [...rootState.lexical.tokenStream];
 
+			tokenStream.push({
+				arrow: "-->",
+				col: 1,
+				lexeme: "eof",
+				line: tokenStream.length-1,
+				token: "eof"
+			});
+			
 			try {
 				for (const token of tokenStream) {
 					console.log(token.token);
