@@ -16,14 +16,13 @@
       num_lit: "numLit",
       L_sqr: "LSqr",
       R_sqr: "RSqr",
-      comma: "comma",
-      eof: "eof"
-    }); 
+      comma: "comma"
+    });
 %}
 
 @lexer lexer
 
-program -> statement %eof
+program -> statement
 
 statement -> desired_statement statement
   | null

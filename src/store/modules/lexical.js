@@ -1,5 +1,9 @@
 const moo = require("moo");
 
+function isTokenWhitespace(token) {
+  return token === 'WS' || token === 'NL';
+}
+
 export default {
   namespaced: true,
   state: {
@@ -35,8 +39,8 @@ export default {
       NL: {match: /\n|\r\n|\r/, lineBreaks: true},
       WS: /[ \t]+/,
 
-      negaFloatNumLit: /[~][0-9]{1,9}[\.][0-9]{1,9}/,
-      floatNumLit: /[0-9]{1,9}[\.][0-9]{1,9}/,
+      negaFloatNumLit: /[~][0-9]{0,9}[\.][0-9]{1,9}/,
+      floatNumLit: /[0-9]{0,9}[\.][0-9]{1,9}/,
       negaNumLit: /[~][0-9]{1,9}/,
       numLit: /[0-9]{1,9}/,
 
@@ -78,13 +82,18 @@ export default {
       arithOp: ["-", "*", "/", "%"]
     },
     delims: {
-      nonNegaNum: ['floatNumLit', 'nulLit'],
-      negaNum: ['negaFloatLit', 'negaNumLit'],
-      numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
-      arrAccess: ['absorb', 'insert', 'uproot'],
-      strAccess: ['atChar'],
-      keywordsWithParen: ['NL', 'WS', 'L_paren'],
-    }
+      negaSign: ['NL', 'WS', 'id', 'L_paren'],
+      id: ['NL', 'WS', 'comma', 'period', 'terminator', 'unary', 'L_sqr', 'L_curl', 'L_paren'],
+      data_type: ['NL', 'WS', 'comment', 'multiline'],
+      keywords: ['NL', 'WS', 'L_paren'],
+      control: ['terminator'],
+      else: ['NL', 'WS', 'L_curl'],
+      period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess']
+    },
+    nonNegaNum: ['floatNumLit', 'numLit'],
+    negaNum: ['negaFloatLit', 'negaNumLit'],
+    numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
+    keywords: ['arr_access', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
   },
   getters: {
 		lexemes: (state) => state.tokenStream.filter(token => token.token !== '<NL>' && token.token !== '<WS>')
@@ -128,11 +137,11 @@ export default {
     async ANALYZE_DELIMITERS({ state, rootState }) {
       const empty = { token: '', line: null, col: null };
       const len = state.tempTokenStream.length;
+
       for (let index = 0; index < len; index++) {
         const prev = index - 1 > 0 ? state.tempTokenStream[index - 1] : empty;
         const current = state.tempTokenStream[index];
         const next = index + 1 !== len ? state.tempTokenStream[index + 1] : empty;
-        const currentNextNext = index + 2 !== len ? state.tempTokenStream[index + 2] : empty;
 
         // if consecutive tokens are both id, return an error
         // since this only means that the id exceeded the limit of characters
@@ -146,21 +155,11 @@ export default {
           return;
         }
 
-        if (current.token === 'data_type' && (next.token !== 'WS' || next.token !== 'NL')) {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiters',
-            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
         // if consecutive tokens are both number literal, return an error
         // since this only means that the number literal exceeded the limit of characters
         if (
-          state.delims.numbers.includes(current.token)
-          && state.delims.numbers.includes(next.token)
+          state.numbers.includes(current.token)
+          && state.numbers.includes(next.token)
         ) {
           rootState.syntax.errors.push({
             code: 'numbers-limit-exceeded',
@@ -171,67 +170,79 @@ export default {
           return;
         }
 
-        // if the keyword after dot is not a method or a property
-        // throw an error
-        const isPeriodInvalid = next.token !== 'arrAccess' && next.token !== 'strAccess' && next.token !== 'id';
-        if (current.token === 'period' && isPeriodInvalid) {
-          rootState.syntax.errors.push({
-            code: 'invalid-dot-usage',
-            message: 'Unexpected token after the dot(.) symbol',
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const keywordsWithParen = ['arr_access', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle'];
-        if (keywordsWithParen.includes(current.token) && next.token !== 'L_paren') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after ${current.lexeme}, was expecting (`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const isCurrentConditional = current.token === 'if' || current.token === 'elif';
-        if (isCurrentConditional && next.token !== 'LParen') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        if (current.token === 'else' && next.token !== 'L_curl') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        if (current.token === 'control' && next.token !== 'terminator') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
         //negative symbols followed by another negative symbol is invalid
-        const validNegaToken = next.token === 'id' || next.token === 'LParen' || state.delims.nonNegaNum.includes(next.token);
-        if (current.token === 'negaSign' && !validNegaToken) {
+        const negaSignDelimInvalid = !state.delims.negaSign.includes(next.token);
+        if (current.token === 'negaSign' && negaSignDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
-            message: `Unexpected token after negative symbol`,
+            message: `Invalid use of negative symbol.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const idDelimInvalid = !state.delims.id.includes(next.token);
+        if (current.token === 'id' && idDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after a variable name.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const dataTypeDelimInvalid = !state.delims.data_type.includes(next.token);
+        if (current.token === 'data_type' && dataTypeDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const isTokenAKeyword = state.keywords.includes(current.token);
+        const keywordDelimInvalid = !state.delims.keywords.includes(next.token);
+        if (isTokenAKeyword && keywordDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting (.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const controlDelimInvalid = !state.delims.control.includes(next.token);
+        if (current.token === 'period' && controlDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Semi-colon is required at the end of control statements`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const elseDelimInvalid = !state.delims.else.includes(next.token);
+        if (current.token === 'else' && elseDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting {.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const periodDelimInvalid = !state.delims.period.includes(next.token);
+        if (current.token === 'period' && periodDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after dot (.) symbol.`,
             line: current.line,
             col: current.col
           });
