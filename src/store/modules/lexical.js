@@ -58,7 +58,8 @@ export default {
       unary: ["++", "--"],
       add_assign_op: "+=",
       relate_op: ["!=", "==", ">", "<", ">=", "<="],
-      assign_op: ["=", "-=", "*=", "/=", "%="],
+      assign_op: ["-=", "*=", "/=", "%="],
+      assign_op_only: "=",
       terminator: ";",
       comma: ",",
       period: ".",
@@ -81,7 +82,8 @@ export default {
       nega_num: ['nega_float_lit', 'nega_num_lit'],
       numbers: ['nega_float_num_lit', 'float_num_lit', 'nega_num_lit', 'num_lit'],
       arr_access: ['absorb', 'insert', 'uproot'],
-      str_access: ['atChar']
+      str_access: ['atChar'],
+      keywordsWithParen: ['NL', 'WS', 'L_paren'],
     }
   },
   getters: {
@@ -117,7 +119,7 @@ export default {
           }
         }
 
-        state.tempTokenStream = tokenStream.filter(t => t.token !== "NL" && t.token !== "WS");
+        state.tempTokenStream = [...tokenStream];
       } catch(err) {
         console.log(err.message);
         rootState.syntax.errors.push({ code: 'invalid-token', message: err.message, line: lineCounter });
@@ -130,6 +132,7 @@ export default {
         const prev = index - 1 > 0 ? state.tempTokenStream[index - 1] : empty;
         const current = state.tempTokenStream[index];
         const next = index + 1 !== len ? state.tempTokenStream[index + 1] : empty;
+        const currentNextNext = index + 2 !== len ? state.tempTokenStream[index + 2] : empty;
 
         // if consecutive tokens are both id, return an error
         // since this only means that the id exceeded the limit of characters
@@ -143,16 +146,15 @@ export default {
           return;
         }
 
-        // const isTokenDataDec = current.token === 'data_type' || current.token === 'constant' || current.token === 'object';
-        // if (isTokenDataDec && next.token !== 'id') {
-        //   rootState.syntax.errors.push({
-        //     code: 'invalid-token',
-        //     message: 'Missing variable name after data type',
-        //     line: current.line,
-        //     col: current.col
-        //   });
-        //   return;
-        // }
+        if (current.token === 'data_type' && (next.token !== 'WS' || next.token !== 'NL')) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
 
         // if consecutive tokens are both number literal, return an error
         // since this only means that the number literal exceeded the limit of characters
@@ -182,21 +184,11 @@ export default {
           return;
         }
 
-        if (current.token === 'arr_access' && next.token !== 'L_paren') {
+        const keywordsWithParen = ['arr_access', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle'];
+        if (keywordsWithParen.includes(current.token) && next.token !== 'L_paren') {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
-            message: 'Unexpected token after array access method',
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const isCurrentFunction = current.token === 'typecast' || current.token === 'trim';
-        if (isCurrentFunction && next.token !== 'L_paren') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: 'Unexpected token after type casting keyword',
+            message: `Unexpected token after ${current.lexeme}, was expecting (`,
             line: current.line,
             col: current.col
           });
@@ -214,19 +206,7 @@ export default {
           return;
         }
 
-        const isElseInvalid = next.token === 'L_paren' || next.token === 'R_paren';
-        if (current.token === 'else' && isElseInvalid) {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const isCurrentIOOps = current.token === 'output' || current.token === 'input';
-        if (isCurrentIOOps && next.token !== 'L_paren') {
+        if (current.token === 'else' && next.token !== 'L_curl') {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after "${current.lexeme}" keyword`,
@@ -237,17 +217,6 @@ export default {
         }
 
         if (current.token === 'control' && next.token !== 'terminator') {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiter',
-            message: `Unexpected token after "${current.lexeme}" keyword`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const isCurrentLoop = current.token === 'during' || current.token === 'cycle';
-        if (isCurrentLoop && next.token !== 'L_paren') {
           rootState.syntax.errors.push({
             code: 'invalid-delimiter',
             message: `Unexpected token after "${current.lexeme}" keyword`,
@@ -269,7 +238,9 @@ export default {
           return;
         }
 
-        state.tokenStream.push(current);
+        if (current.token !== 'WS' && current.token !== 'NL') {
+          state.tokenStream.push(current);
+        }
       }
     }
   }
