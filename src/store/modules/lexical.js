@@ -85,8 +85,9 @@ export default {
     delims: {
       negaSign: ['NL', 'WS', 'id', 'LParen'],
       id: [
-        'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'unary', 'LSqr', 'LCurl', 'LParen',
-        'arithOp', 'addOp', 'notOp', 'andOp', 'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
+        'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'unary',
+        'LSqr', 'LCurl', 'LParen', 'RParen', 'arithOp', 'addOp', 'notOp', 'andOp',
+        'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
       ],
       dataType: ['NL', 'WS', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
@@ -98,7 +99,10 @@ export default {
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
     numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
-    keywords: ['posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
+    keywords: [
+      'posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size',
+      'output', 'input', 'during', 'cycle', 'if', 'elif'
+    ]
   },
   getters: {
 		lexemes: (state) => state.tokenStream.map(token => {
@@ -179,6 +183,14 @@ export default {
         const prev = index - 1 > 0 ? state.tempTokenStream[index - 1] : empty;
         const current = state.tempTokenStream[index];
         const next = index + 1 !== len ? state.tempTokenStream[index + 1] : empty;
+
+
+        if (next.token === 'comment' || next.token === 'multiline') {
+          if (current.token !== 'WS' && current.token !== 'NL') {
+            state.tokenStream.push(current);
+          }
+          continue;
+        }
 
         // if consecutive tokens are both id, return an error
         // since this only means that the id exceeded the limit of characters
