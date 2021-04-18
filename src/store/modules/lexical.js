@@ -184,7 +184,8 @@ export default {
         const current = state.tempTokenStream[index];
         const next = index + 1 !== len ? state.tempTokenStream[index + 1] : empty;
 
-
+        // if comment is the next token from the current
+        // omit it already
         if (next.token === 'comment' || next.token === 'multiline') {
           if (current.token !== 'WS' && current.token !== 'NL') {
             state.tokenStream.push(current);
