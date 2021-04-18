@@ -32,7 +32,8 @@ export default {
           "void": "void",
           "boolLit": ["true", "false"],
           "arrAccess": ["absorb", "insert", "uproot"],
-          "strAccess": "atChar"
+          "strAccess": "atChar",
+          "posAccess": "atPos"
         })
       },
 
@@ -88,15 +89,49 @@ export default {
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
       else: ['NL', 'WS', 'LCurl'],
-      period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess']
+      period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess']
     },
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
     numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
-    keywords: ['strAccess', 'arrAccess', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
+    keywords: ['posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size', 'output', 'input', 'during', 'cycle', 'if', 'elif']
   },
   getters: {
-		lexemes: (state) => state.tokenStream.filter(token => token.token !== '<NL>' && token.token !== '<WS>')
+		lexemes: (state) => state.tokenStream.map(token => {
+      const newToken = { ...token };
+      const expanded = {
+        dataType: 'data type',
+        boolLit: 'bool literal',
+        arrAccess: 'array access',
+        strAccess: 'string access',
+        posAccess: 'character position',
+        negaFloatNumLit: 'negative float number',
+        floatNumLit: 'positive float number',
+        negaNumLit: 'negative whole number',
+        numLit: 'positive whole number',
+        stringLit: 'string literal',
+        multiline: 'multiline comment',
+        addAssignOp: 'add-assign operator',
+        assignOnlyOp: 'assignment operator',
+        relateOp: 'relational operator',
+        assignOp: 'assignment operator',
+        addOp: 'arithmetic operator',
+        arithOp: 'arithmetic operator',
+        negaSign: 'negative symbol',
+        notOp: 'logical operator',
+        andOp: 'logical operator',
+        orOp: 'logical operator',
+        LParen: 'left parenthesis',
+        RParen: 'right parenthesis',
+        LCurl: 'left curly brace',
+        RCulr: 'right curly brace',
+        LSqr: 'left square bracket',
+        RSqr: 'right square bracket',
+      }
+      newToken.token = expanded[token.token] ? expanded[token.token] : token.token;
+      console.log(newToken);
+      return newToken;
+    })
 	},
   mutations: {
     CLEAR_LEXEMES(state) {
@@ -119,7 +154,6 @@ export default {
           if (token) {
             tokenStream.push({
               lexeme: token.value,
-              arrow: "-->",
               token: `${token.type}`,
               line: token.line,
               col: token.col

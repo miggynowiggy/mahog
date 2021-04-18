@@ -79,7 +79,7 @@
 				<v-row align="center" justify="center" wrap>
 					<!-- Lexeme table Card -->
 					<v-col cols="12">
-						<v-card height="80vh" class="pa-2" elevation="13">
+						<v-card height="auto" class="pa-2" elevation="13">
 							<v-card-title class="text-h4 font-weight-bold primary--text">
 								Lexeme Table
 							</v-card-title>
@@ -213,7 +213,6 @@ object miggy = {
 			lexemeHeader: [
 				{ text: "Line", align: "center", sortable: "false", value: "line" },
 				{ text: "Lexeme", align: "center", sortable: "false", value: "lexeme" },
-				{ text: "-->", align: "center", sortable: "false", value: "arrow" },
 				{
 					text: "Token",
 					align: "center",
