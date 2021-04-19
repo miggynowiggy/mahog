@@ -89,12 +89,16 @@ export default {
         'LSqr', 'LCurl', 'LParen', 'RParen', 'arithOp', 'addOp', 'notOp', 'andOp',
         'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
       ],
-      dataType: ['NL', 'WS', 'comment', 'multiline'],
+      dataType: ['NL', 'WS', 'comment', 'multiline', 'id'],
+      constant: ['NL', 'WS', 'comment', 'multiline', 'id'],
+      object: ['NL', 'WS', 'comment', 'multiline', 'id'],
+      void: ['NL', 'WS', 'id'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
       else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
-      notOp: ['id', 'LParen', 'boolLit']
+      notOp: ['id', 'LParen', 'boolLit'],
+      boolLit: ['NL', 'WS', 'terminator', 'notOp', 'andOp', 'orOp', 'relateOp'],
     },
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
@@ -102,7 +106,7 @@ export default {
     keywords: [
       'posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size',
       'output', 'input', 'during', 'cycle', 'if', 'elif'
-    ]
+    ],
   },
   getters: {
 		lexemes: (state) => state.tokenStream.map(token => {
@@ -245,6 +249,39 @@ export default {
 
         const dataTypeDelimInvalid = !state.delims.dataType.includes(next.token);
         if (current.token === 'dataType' && dataTypeDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const constantTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        if (current.token === 'constant' && constantTypeDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const objectTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        if (current.token === 'object' && objectTypeDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const voidTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        if (current.token === 'void' && voidTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
