@@ -258,7 +258,7 @@ export default {
           return;
         }
 
-        const constantTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        const constantTypeDelimInvalid = !state.delims.constant.includes(next.token);
         if (current.token === 'constant' && constantTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
@@ -269,7 +269,7 @@ export default {
           return;
         }
 
-        const objectTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        const objectTypeDelimInvalid = !state.delims.object.includes(next.token);
         if (current.token === 'object' && objectTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
@@ -280,7 +280,7 @@ export default {
           return;
         }
 
-        const voidTypeDelimInvalid = !state.delims.dataType.includes(next.token);
+        const voidTypeDelimInvalid = !state.delims.void.includes(next.token);
         if (current.token === 'void' && voidTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
@@ -341,6 +341,17 @@ export default {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Invalid token after not (!) operator.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const boolLitDelimInvalid = !state.delims.boolLit.includes(next.token);
+        if (current.token === 'boolLit' && boolLitDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after boolean literal.`,
             line: current.line,
             col: current.col
           });
