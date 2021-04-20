@@ -85,11 +85,12 @@
 							</v-card-title>
 							<v-card-text>
 								<v-data-table
-									dense
 									:headers="lexemeHeader"
 									:items="lexemeTable"
-									disable-sort
 									:items-per-page="10"
+									no-data-text="Press 'Run' to see the tokens..."
+									disable-sort
+									dense
 								></v-data-table>
 							</v-card-text>
 						</v-card>
@@ -97,8 +98,8 @@
 				</v-row>
 			</v-col>
 		</v-row>
-		<v-row align="center" justify="center" wrap>
-			<v-col cols="12">
+		<v-row align="center" justify="center" wrap class="mt-5">
+			<v-col cols="10">
 				<!-- The Syntax Analysis Card -->
 				<v-card class="pa-2" elevation="13">
 					<v-card-title class="text-h4 font-weight-bold primary--text">
@@ -106,11 +107,12 @@
 					</v-card-title>
 					<v-card-text>
 						<v-data-table
-							dense
 							:headers="syntaxHeader"
 							:items="errorTable"
-							disable-sort
 							:items-per-page="5"
+							disable-sort
+							dense
+							no-data-text="No errors..."
 						></v-data-table>
 					</v-card-text>
 				</v-card>
@@ -129,7 +131,7 @@
 	import "prismjs/components/prism-clike";
 	import "prismjs/components/prism-javascript";
 	import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
-	const code = `
+	const code1 = `
 seed something;
 seed _num = "2";
 stone wawThisIsLong = 21;
@@ -207,8 +209,7 @@ object miggy = {
 		name: "Code",
 		components: { PrismEditor },
 		data: () => ({
-			// code: `@stone miggy = "waw this";\nseed nums = -21;\n\nobject miggy = {\n\tnumber age: -21.90,\n\tstring name: "miggy"\n};\n\nstring names = ["juan", 'alec', "matt"];\nnumber ages = [];`,
-			code: code,
+			code: '',
 			playLoading: false,
 			lexemeHeader: [
 				{ text: "Line", align: "center", sortable: "false", value: "line" },
@@ -229,7 +230,7 @@ object miggy = {
 			syntaxes: [],
 		}),
 		mounted() {
-			this.runCode();
+			// this.runCode();
 		},
 		methods: {
 			highlight(code) {
@@ -259,7 +260,14 @@ object miggy = {
 				return this.$store.getters["syntax/errors"];
 			},
 		},
-		watch: {},
+		watch: {
+			code(val) {
+				if (!val) {
+					this.$store.commit("lexical/CLEAR_LEXEMES");
+					this.$store.commit("syntax/CLEAR_ERRORS");
+				}
+			}
+		},
 	};
 </script>
 

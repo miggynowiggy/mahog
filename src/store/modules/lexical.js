@@ -98,7 +98,7 @@ export default {
       operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit'],
       numbers: ['NL', 'WS', 'addOp', 'arithOp', 'relateOp', 'terminator'],
       boolLit: ['NL', 'WS', 'andOp', 'orOp', 'relateOp', 'terminator'],
-      stringLit: ['NL', 'WS', 'addOp', 'terminator']
+      stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'terminator']
     },
     dataTypes: ['dataType', 'constant', 'object', 'void'],
     nonNegaNum: ['floatNumLit', 'numLit'],
@@ -148,22 +148,25 @@ export default {
 	},
   mutations: {
     CLEAR_LEXEMES(state) {
-      state.tokenStream = []
+      state.tokenStream = [];
+      state.tempTokenStream = [];
     }
   },
   actions: {
     async ANALYZE({ state, rootState }, code) {
       state.tokenStream = [];
       let lineCounter;
-      try {
-        const tokenStream = [];
-        const parser = moo.compile(state.rules);
-        code += "\n";
-        let reader = parser.reset(code);
+      let currentToken;
 
+      const tokenStream = [];
+      const parser = moo.compile(state.rules);
+      let reader = parser.reset(code);
+
+      try {
         let token = " ";
         while(token) {
           token = reader.next();
+          currentToken = token;
           if (token) {
             tokenStream.push({
               lexeme: token.value,
@@ -177,8 +180,15 @@ export default {
 
         state.tempTokenStream = [...tokenStream];
       } catch(err) {
-        console.log(err.message);
-        rootState.syntax.errors.push({ code: 'invalid-token', message: err.message, line: lineCounter });
+        const errMessage = err.message.split('\n');
+        console.log(errMessage);
+        const indexOfPointer = errMessage[3].indexOf("^");
+        const maySala = errMessage[2].charAt(indexOfPointer);
+        rootState.syntax.errors.push({
+          code: 'invalid-token',
+          message: `Unexpected token -> ${maySala}`,
+          line: lineCounter
+        });
       }
     },
     async ANALYZE_DELIMITERS({ state, rootState }) {
