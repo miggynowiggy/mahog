@@ -30,27 +30,27 @@ export default {
 			const tagaParse = new nearley.Parser(
 				nearley.Grammar.fromCompiled(grammar)
 			);
-			let tokenStream = [...rootState.lexical.tokenStream];
 
-			tokenStream.push({
-				arrow: "-->",
-				col: 1,
-				lexeme: "eof",
-				line: tokenStream.length-1,
-				token: "eof"
-			});
-			
+			let tokenStream = rootState.lexical.tokenStream.filter(t => t.token !== 'comment' && t.token !== 'multiline');
+			let currentToken;
 			try {
 				for (const token of tokenStream) {
-					console.log(token.token);
+					currentToken = { ...token };
 					tagaParse.feed(token.token);
 					const { results } = tagaParse;
-					console.log(results);
+					console.log(token.token, results.length);
 				}
-
 			} catch(err) {
-				console.error(err.message);
-				state.errors.push({ message: err.message });
+				console.log(err.message.split("\n"));
+				const splittedErrMessage = err.message.split("\n");
+				state.errors.push({
+					code: 'syntax-error',
+					message: `
+						Unexpected token ${currentToken.lexeme},
+						instead was expecting ${splittedErrMessage[6].toLowerCase().replace("token based on:", "")}
+					`,
+					line: currentToken.line
+				});
 			}
 		},
 	},
