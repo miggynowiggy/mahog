@@ -92,7 +92,7 @@ export default {
       dataTypes: ['NL', 'WS', 'id', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
-      return: ['NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
+      return: ['NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'terminator'],
       else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
       notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
