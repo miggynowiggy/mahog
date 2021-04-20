@@ -86,8 +86,9 @@ export default {
       negaSign: ['NL', 'WS', 'id', 'LParen', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
       id: [
         'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'unary',
-        'LSqr', 'LCurl', 'LParen', 'RParen', 'arithOp', 'addOp', 'notOp', 'andOp',
-        'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
+        'LSqr', 'LCurl', 'LParen', 'RParen', 'RCurl', 'RSqr', 'arithOp',
+        'addOp', 'notOp', 'andOp', 'orOp', 'assignOp', 'relateOp',
+        'assignOnlyOp', 'addAssignOp'
       ],
       dataTypes: ['NL', 'WS', 'id', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
@@ -97,8 +98,8 @@ export default {
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
       notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
       operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit'],
-      numbers: ['NL', 'WS', 'comma', 'addOp', 'arithOp', 'relateOp', 'terminator'],
-      boolLit: ['NL', 'WS', 'comma', 'andOp', 'orOp', 'relateOp', 'terminator'],
+      numbers: ['NL', 'WS', 'comma', 'addOp', 'arithOp', 'relateOp', 'terminator', 'RSqr', 'RCurl', 'RParen'],
+      boolLit: ['NL', 'WS', 'comma', 'andOp', 'orOp', 'relateOp', 'terminator', 'RSqr', 'RCurl', 'RParen'],
       stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'RParen', 'terminator'],
       null: ['NL', 'WS', 'relateOp', 'andOp', 'orOp', 'RSqr', 'RCurl', 'RParen', 'comma', 'terminator']
     },
