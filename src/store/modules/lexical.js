@@ -92,6 +92,7 @@ export default {
       dataTypes: ['NL', 'WS', 'id', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
+      return: ['NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
       else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
       notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
@@ -300,6 +301,17 @@ export default {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Semi-colon is required at the end of control statements`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const returnDelimInvalid = !state.delims.return.includes(next.token);
+        if (current.token === 'return' && returnDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after the return keyword.`,
             line: current.line,
             col: current.col
           });
