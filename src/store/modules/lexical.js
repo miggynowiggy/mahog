@@ -97,9 +97,10 @@ export default {
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
       notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
       operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit'],
-      numbers: ['NL', 'WS', 'addOp', 'arithOp', 'relateOp', 'terminator'],
-      boolLit: ['NL', 'WS', 'andOp', 'orOp', 'relateOp', 'terminator'],
-      stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'terminator']
+      numbers: ['NL', 'WS', 'comma', 'addOp', 'arithOp', 'relateOp', 'terminator'],
+      boolLit: ['NL', 'WS', 'comma', 'andOp', 'orOp', 'relateOp', 'terminator'],
+      stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'RParen', 'terminator'],
+      null: ['NL', 'WS', 'relateOp', 'andOp', 'orOp', 'RSqr', 'RCurl', 'RParen', 'comma', 'terminator']
     },
     dataTypes: ['dataType', 'constant', 'object', 'void'],
     nonNegaNum: ['floatNumLit', 'numLit'],
@@ -379,6 +380,17 @@ export default {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Invalid token after a boolean literal.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const nullDelimInvalid = !state.delims.null.includes(next.token);
+        if (current.token === 'null' && nullDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after a null literal.`,
             line: current.line,
             col: current.col
           });
