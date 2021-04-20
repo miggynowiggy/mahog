@@ -83,23 +83,24 @@ export default {
       arithOp: ["-", "*", "/", "%"]
     },
     delims: {
-      negaSign: ['NL', 'WS', 'id', 'LParen'],
+      negaSign: ['NL', 'WS', 'id', 'LParen', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
       id: [
         'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'unary',
         'LSqr', 'LCurl', 'LParen', 'RParen', 'arithOp', 'addOp', 'notOp', 'andOp',
         'orOp', 'assignOp', 'relateOp', 'assignOnlyOp', 'addAssignOp'
       ],
-      dataType: ['NL', 'WS', 'comment', 'multiline', 'id'],
-      constant: ['NL', 'WS', 'comment', 'multiline', 'id'],
-      object: ['NL', 'WS', 'comment', 'multiline', 'id'],
-      void: ['NL', 'WS', 'id'],
+      dataTypes: ['NL', 'WS', 'id', 'comment', 'multiline'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
       else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
-      notOp: ['id', 'LParen', 'boolLit'],
-      boolLit: ['NL', 'WS', 'terminator', 'notOp', 'andOp', 'orOp', 'relateOp'],
+      notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
+      operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit'],
+      numbers: ['NL', 'WS', 'addOp', 'arithOp', 'relateOp', 'terminator'],
+      boolLit: ['NL', 'WS', 'andOp', 'orOp', 'relateOp', 'terminator'],
+      stringLit: ['NL', 'WS', 'addOp', 'terminator']
     },
+    dataTypes: ['dataType', 'constant', 'object', 'void'],
     nonNegaNum: ['floatNumLit', 'numLit'],
     negaNum: ['negaFloatLit', 'negaNumLit'],
     numbers: ['negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit'],
@@ -107,6 +108,7 @@ export default {
       'posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size',
       'output', 'input', 'during', 'cycle', 'if', 'elif'
     ],
+    operators: ['addAssignOp', 'assignOnlyOp', 'relateOp', 'assignOp', 'addOp', 'andOp', 'orOp', 'arithOp']
   },
   getters: {
 		lexemes: (state) => state.tokenStream.map(token => {
@@ -247,41 +249,9 @@ export default {
           return;
         }
 
-        const dataTypeDelimInvalid = !state.delims.dataType.includes(next.token);
-        if (current.token === 'dataType' && dataTypeDelimInvalid) {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiters',
-            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const constantTypeDelimInvalid = !state.delims.constant.includes(next.token);
-        if (current.token === 'constant' && constantTypeDelimInvalid) {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiters',
-            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const objectTypeDelimInvalid = !state.delims.object.includes(next.token);
-        if (current.token === 'object' && objectTypeDelimInvalid) {
-          rootState.syntax.errors.push({
-            code: 'invalid-delimiters',
-            message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
-            line: current.line,
-            col: current.col
-          });
-          return;
-        }
-
-        const voidTypeDelimInvalid = !state.delims.void.includes(next.token);
-        if (current.token === 'void' && voidTypeDelimInvalid) {
+        const isTokenDataType = state.dataTypes.includes(current.token);
+        const dataTypeDelimInvalid = !state.delims.dataTypes.includes(next.token);
+        if (isTokenDataType && dataTypeDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Unexpected token after ${current.lexeme}, was expecting space or newline.`,
@@ -303,8 +273,20 @@ export default {
           return;
         }
 
+        const isTokenOperator = state.operators.includes(current.token);
+        const operatorDelimInvalid = !state.delims.operators.includes(next.token);
+        if (isTokenOperator && operatorDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Unexpected token after an operator`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
         const controlDelimInvalid = !state.delims.control.includes(next.token);
-        if (current.token === 'period' && controlDelimInvalid) {
+        if (current.token === 'control' && controlDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
             message: `Semi-colon is required at the end of control statements`,
@@ -347,11 +329,34 @@ export default {
           return;
         }
 
+        const isTokenNumber = state.numbers.includes(current.token);
+        const numberDelimInvalid = !state.delims.numbers.includes(next.token);
+        if (isTokenNumber && numberDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after a number literal.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
+        const stringDelimInvalid = !state.delims.stringLit.includes(next.token);
+        if (current.token === 'stringLit' && stringDelimInvalid) {
+          rootState.syntax.errors.push({
+            code: 'invalid-delimiters',
+            message: `Invalid token after a string literal.`,
+            line: current.line,
+            col: current.col
+          });
+          return;
+        }
+
         const boolLitDelimInvalid = !state.delims.boolLit.includes(next.token);
         if (current.token === 'boolLit' && boolLitDelimInvalid) {
           rootState.syntax.errors.push({
             code: 'invalid-delimiters',
-            message: `Invalid token after boolean literal.`,
+            message: `Invalid token after a boolean literal.`,
             line: current.line,
             col: current.col
           });

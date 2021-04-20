@@ -140,7 +140,7 @@ boolean isLegal = true;
 names = ["Some", "Valuable", "String"];
 `;
 
-	const code_1 = `
+	const code2 = `
 seed something;
 seed _num = "2";
 stone wawThisIsLong = 21;
