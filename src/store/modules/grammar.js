@@ -72,6 +72,7 @@ var grammar = {
     {"name": "desired_statement", "symbols": ["object_declare"]},
     {"name": "desired_statement", "symbols": ["void_declare"]},
     {"name": "desired_statement", "symbols": ["return_statement"]},
+    {"name": "desired_statement", "symbols": ["loop_statement"]},
     {"name": "desired_statement", "symbols": ["id_use"]},
     {"name": "declare_data", "symbols": ["data_id", "data_choices"]},
     {"name": "data_id", "symbols": [(lexer.has("data_type") ? {type: "data_type"} : data_type), (lexer.has("id") ? {type: "id"} : id)]},
@@ -124,7 +125,14 @@ var grammar = {
     {"name": "return_statement", "symbols": [(lexer.has("return_word") ? {type: "return_word"} : return_word), "return_content"]},
     {"name": "return_content", "symbols": ["data_nonfunction", (lexer.has("terminator") ? {type: "terminator"} : terminator)]},
     {"name": "return_content", "symbols": ["paren_wrapper", (lexer.has("terminator") ? {type: "terminator"} : terminator)]},
-    {"name": "return_content", "symbols": [(lexer.has("terminator") ? {type: "terminator"} : terminator)]}
+    {"name": "return_content", "symbols": [(lexer.has("terminator") ? {type: "terminator"} : terminator)]},
+    {"name": "loop_statement", "symbols": [(lexer.has("during") ? {type: "during"} : during), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "loopstmt_choices"]},
+    {"name": "loop_statement", "symbols": [(lexer.has("cycle") ? {type: "cycle"} : cycle), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "cycle_condition", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "loopstmt_choices"]},
+    {"name": "loopstmt_choices", "symbols": [(lexer.has("L_curl") ? {type: "L_curl"} : L_curl), "statement", (lexer.has("R_curl") ? {type: "R_curl"} : R_curl)]},
+    {"name": "cycle_condition", "symbols": ["init_loop", "unary_statement"]},
+    {"name": "init_loop", "symbols": ["data_id", (lexer.has("assign_only_op") ? {type: "assign_only_op"} : assign_only_op), "data_nonfunction", (lexer.has("terminator") ? {type: "terminator"} : terminator)]},
+    {"name": "init_loop", "symbols": []},
+    {"name": "unary_statement", "symbols": [(lexer.has("id") ? {type: "id"} : id), (lexer.has("unary") ? {type: "unary"} : unary)]}
 ]
   , ParserStart: "program"
 }

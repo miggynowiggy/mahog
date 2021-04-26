@@ -75,6 +75,7 @@ desired_statement
   | object_declare
   | void_declare
   | return_statement
+  | loop_statement
   | id_use # this is use to refer the variable reassignment statements and the function call statements
   # | null
 
@@ -187,3 +188,25 @@ return_content
 #TODO
 # function call should be flexible, if used as a statement, then the terminator should be included
 # if to be used as data assignment, then the terminator should not be included
+
+# loops
+loop_statement
+  -> %during %L_paren cond_loop %R_paren loopstmt_choices
+  | %cycle %L_paren cycle_condition %R_paren loopstmt_choices
+
+loopstmt_choices
+  -> %L_curl statement %R_curl
+
+cycle_condition
+  -> init_loop cond_loop unary_statement
+
+init_loop
+  -> data_id %assign_only_op data_nonfunction %terminator
+  | null
+
+cond_loop
+  # -> expression %terminator
+  -> null
+
+unary_statement
+  -> %id %unary
