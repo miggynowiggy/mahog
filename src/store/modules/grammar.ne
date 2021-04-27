@@ -43,12 +43,14 @@
     add_assign_op: "addAssignOp",
     assign_only_op: "assignOnlyOp",
     assign_op: "assignOp",
-    relate_op: "relateOp",
+    relate_op_bool: "relateOpBool",
+    relate_op_num: "relateOpBoolNum",
     arith_op: "arithOp",
     add_op: "addOp",
     not_op: "notOp",
     and_op: "andOp",
     or_op: "orOp",
+    and_op: "andOp",
     unary: "unary",
 
     string_lit: "stringLit",
@@ -77,8 +79,8 @@ desired_statement
   | void_declare
   | return_statement
   | loop_statement
-  | my_expression
   | if_statement
+  | expressions_noid
   | id_use # this is use to refer the variable reassignment statements and the function call statements
   # | null
 
@@ -89,12 +91,45 @@ data_id -> %data_type %id
 data_choices
   -> %terminator
   | function_dec
-  | %assign_only_op data_nonfunction %terminator
+  | %assign_only_op expressions %terminator
+
+operators
+  -> %relate_op_bool 
+  | %relate_op_num 
+  | %arith_op 
+  | %add_op 
+  | %or_op 
+  | %and_op 
+
+expressions
+  -> data_nonfunction expression_yes
+  | null
+
+more_not
+  -> %not_op more_not
+  | null
+
+grouping
+  -> bool_operand additional_bool
+  | num_operand additional_num
+
+expressions_noid
+  -> data_nonfunction_noid expression_yes %terminator
+
+data_nonfunction_noid
+  -> literals # use to refer for the function call and the solo ID only
+  | %L_paren expressions %R_paren
+  | %not_op more_not data_nonfunction
 
 data_nonfunction
   -> literals
-  | array_literal
-  | id_use # use to refer for the function call and the solo ID only
+  | ids # use to refer for the function call and the solo ID only
+  | %L_paren expressions %R_paren
+  | %not_op more_not data_nonfunction
+
+expression_yes
+  -> operators expressions
+  | null
 
 const_declare
   -> const_start %assign_only_op literals %terminator
@@ -127,9 +162,9 @@ assign_op
   | %add_assign_op
 
 literals
-  -> num_literals
+  -> num_literals #additional_num
   | %string_lit
-  | %bool_lit
+  | %bool_lit #additional_bool
 
 num_literals
   -> %nega_float_num_lit
@@ -139,15 +174,16 @@ num_literals
 
 # Determines whether the ID token is being used for variable reassignment or for function call
 id_use
-  -> %id assign_choice
+  -> %id assign_choice %terminator
 
 assign_choice
-  -> assign_data
-  | function_call %terminator
-  | null
+  -> assign_op expressions 
+  | function_call 
+  | expression_yes
 
-assign_data
-  -> assign_op data_nonfunction %terminator
+#id_options
+  #-> data_nonfunction
+  #| expression
 
 array_literal
   -> %L_sqr array_contents %R_sqr
@@ -172,7 +208,7 @@ function_call
 paren_wrapper -> %L_paren paren_content %R_paren
 
 paren_content
-  -> data_nonfunction paren_content_append
+  -> expressions paren_content_append
   | null
 
 paren_content_append
@@ -261,3 +297,66 @@ size_function
 # type casting
 type_casting
   -> %typecase %L_paren all_datatype %R_paren
+#expressions
+expression
+  -> num_expr
+  | bool_expr
+
+num_expr
+  -> num_operand additional_num
+  | %L_paren num_operand additional_num %R_paren
+
+num_operand
+  -> ids
+  | num_literals
+  | num_expr
+
+additional_num
+  -> cond_operator num_operand additional_num
+  | null 
+
+cond_operator
+  -> %arith_op
+  | %add_op
+  | %relate_op
+
+bool_expr
+  -> bool_operand additional_bool
+  | %L_paren bool_operand additional_bool %R_paren
+
+bool_operand
+  -> ids
+  | %bool_lit
+
+additional_bool
+  -> null
+  | bool_op bool_operand additional_bool
+
+bool_op
+  -> %relate_op_bool
+  | %or_op
+  | %and_op
+
+#id, array, and object access
+ids
+  -> %id id_choices
+
+id_choices
+  -> arrIndex object_yes
+  | %period obj_prop
+  | function_call
+
+object_yes
+  -> %period obj_prop
+  | null
+
+obj_prop
+  -> %id arrIndex
+
+arrIndex
+  -> null
+  | %L_sqr %num_lit %R_sqr arr2D
+
+arr2D
+  -> null
+  | %L_sqr %num_lit %R_sqr arr2D

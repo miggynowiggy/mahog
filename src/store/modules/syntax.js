@@ -36,6 +36,7 @@ export default {
 			try {
 				for (const token of tokenStream) {
 					currentToken = { ...token };
+					console.log(currentToken)
 					tagaParse.feed(token.token);
 					const { results } = tagaParse;
 					console.log(token.token, results.length);

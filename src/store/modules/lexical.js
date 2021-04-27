@@ -63,7 +63,8 @@ export default {
       unary: ["++", "--"],
       addAssignOp: "+=",
       assignOnlyOp: "=",
-      relateOp: ["!=", "==", ">", "<", ">=", "<="],
+      relateOpBool: ["!=", "=="], 
+      relateOpNum: [">", "<", ">=", "<="],
       assignOp: ["-=", "*=", "/=", "%="],
       terminator: ";",
       comma: ",",
@@ -96,11 +97,11 @@ export default {
       return: ['NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'terminator'],
       else: ['NL', 'WS', 'LCurl'],
       period: ['NL', 'WS', 'id', 'strAccess', 'arrAccess', 'posAccess'],
-      notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit'],
-      operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit'],
-      numbers: ['NL', 'WS', 'comma', 'addOp', 'arithOp', 'relateOp', 'terminator', 'RSqr', 'RCurl', 'RParen'],
+      notOp: ['NL', 'WS', 'id', 'LParen', 'boolLit', 'notOp', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'stringLit'],
+      operators: ['NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit', 'negaNumLit', 'numLit', 'boolLit', 'stringLit', 'notOp'],
+      numbers: ['NL', 'WS', 'comma', 'addOp', 'arithOp', 'relateOp', 'terminator', 'RSqr', 'RCurl', 'RParen', 'andOp', 'orOp'],
       boolLit: ['NL', 'WS', 'comma', 'andOp', 'orOp', 'relateOp', 'terminator', 'RSqr', 'RCurl', 'RParen'],
-      stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'RParen', 'terminator'],
+      stringLit: ['NL', 'WS', 'comma', 'period', 'addOp', 'RSqr', 'RCurl', 'RParen', 'terminator','arithOp'],
       null: ['NL', 'WS', 'relateOp', 'andOp', 'orOp', 'RSqr', 'RCurl', 'RParen', 'comma', 'terminator']
     },
     dataTypes: ['dataType', 'constant', 'object', 'void'],
@@ -111,7 +112,7 @@ export default {
       'posAccess', 'strAccess', 'arrAccess', 'typecast', 'trim', 'size',
       'output', 'input', 'during', 'cycle', 'if', 'elif'
     ],
-    operators: ['addAssignOp', 'assignOnlyOp', 'relateOp', 'assignOp', 'addOp', 'andOp', 'orOp', 'arithOp']
+    operators: ['addAssignOp', 'assignOnlyOp', 'relateOp', 'assignOp', 'addOp', 'andOp', 'orOp', 'arithOp', 'notOp']
   },
   getters: {
 		lexemes: (state) => state.tokenStream.map(token => {
@@ -182,6 +183,12 @@ export default {
         }
 
         state.tempTokenStream = [...tokenStream];
+        state.tempTokenStream.push({
+          lexeme: " ",
+          token: "WS",
+          line: lineCounter + 1,
+          col: 0
+        });
       } catch(err) {
         const errMessage = err.message.split('\n');
         console.log(errMessage);
