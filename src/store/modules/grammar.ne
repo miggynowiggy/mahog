@@ -22,7 +22,7 @@
     null_word: "null",
     void_word: "void",
     arr_access: "arrAccess",
-    str_access: "str_access",
+    str_access: "strAccess",
     pos_access: "posAccess",
     comment: "comment",
     multiline: "multiline",
@@ -47,6 +47,7 @@
     arith_op: "arithOp",
     add_op: "addOp",
     not_op: "notOp",
+    and_op: "andOp",
     or_op: "orOp",
     unary: "unary",
 
@@ -76,6 +77,8 @@ desired_statement
   | void_declare
   | return_statement
   | loop_statement
+  | my_expression
+  | if_statement
   | id_use # this is use to refer the variable reassignment statements and the function call statements
   # | null
 
@@ -191,7 +194,7 @@ return_content
 
 # loops
 loop_statement
-  -> %during %L_paren cond_loop %R_paren loopstmt_choices
+  -> %during %L_paren boolean_expr %R_paren loopstmt_choices
   | %cycle %L_paren cycle_condition %R_paren loopstmt_choices
 
 loopstmt_choices
@@ -205,8 +208,56 @@ init_loop
   | null
 
 cond_loop
-  # -> expression %terminator
-  -> null
+  -> %bool_lit %terminator
+  | null
 
 unary_statement
   -> %id %unary
+
+cond_statement
+  -> %L_curl statement %R_curl
+
+
+# if/elif/else statements
+else_statement 
+  -> %else_word cond_statement
+  |null 
+
+elif_statement
+  -> %elif %L_paren boolean_expr %R_paren cond_statement elif_statement else_statement
+  |null
+
+if_statement
+  -> %if_word %L_paren boolean_expr %R_paren cond_statement elif_statement else_statement
+
+my_expression
+  -> all_strings %period string_methods # NOTE: Put the all_strings and string_methods in the expression
+  | size_function
+  | type_casting
+
+# string methods
+all_strings
+  -> %string_lit
+  | %id
+  # | my_expression
+
+all_nums
+  -> %num_lit
+  | %id
+  # | my_expression
+
+all_datatype
+  -> all_strings
+  | all_nums
+
+string_methods
+  -> %str_access %L_paren all_nums %R_paren
+  | %pos_access %L_paren all_strings %R_paren
+
+# size function
+size_function
+  -> %size %L_paren all_strings %R_paren
+
+# type casting
+type_casting
+  -> %typecase %L_paren all_datatype %R_paren
