@@ -50,7 +50,6 @@
     not_op: "notOp",
     and_op: "andOp",
     or_op: "orOp",
-    and_op: "andOp",
     unary: "unary",
 
     string_lit: "stringLit",
@@ -230,7 +229,7 @@ return_content
 
 # loops
 loop_statement
-  -> %during %L_paren boolean_expr %R_paren loopstmt_choices
+  -> %during %L_paren bool_expr %R_paren loopstmt_choices
   | %cycle %L_paren cycle_condition %R_paren loopstmt_choices
 
 loopstmt_choices
@@ -245,6 +244,7 @@ init_loop
 
 cond_loop
   -> %bool_lit %terminator
+  | %id bool_expr %terminator
   | null
 
 unary_statement
@@ -260,11 +260,11 @@ else_statement
   |null 
 
 elif_statement
-  -> %elif %L_paren boolean_expr %R_paren cond_statement elif_statement else_statement
+  -> %elif %L_paren bool_expr %R_paren cond_statement elif_statement else_statement
   |null
 
 if_statement
-  -> %if_word %L_paren boolean_expr %R_paren cond_statement elif_statement else_statement
+  -> %if_word %L_paren bool_expr %R_paren cond_statement elif_statement else_statement
 
 my_expression
   -> all_strings %period string_methods # NOTE: Put the all_strings and string_methods in the expression
