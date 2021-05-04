@@ -5,8 +5,7 @@
         <v-card-title :class="[ alertType === 'error' ? 'font-weight-bold error white--text text-center' : 'font-weight-bold success white--text text-center' ]">
           {{ alertType.toUpperCase() }}
         </v-card-title>
-        <v-card-text class="pa-4 my-4 text-center text-subtitle-1">
-          {{ alertMessage }}
+        <v-card-text class="pa-4 my-4 text-center text-subtitle-1" v-html="alertMessage">
         </v-card-text>
         <v-card-actions class="mx-2">
           <v-btn @click="showAlert = !showAlert" :color="alertType" depressed rounded dark block>
@@ -25,6 +24,7 @@
             v-model="code"
             :highlight="highlight"
             line-numbers
+            autoStyleLineNumbers
           ></prism-editor>
         </v-card>
       </v-col>
@@ -279,26 +279,26 @@ export default {
       this.playLoading = true;
       this.clearState();
 
-      const extractedTokens = await this.$store.dispatch("lexical/ANALYZE", this.code);
-      await this.$store.dispatch('tokenizer/CONVERT_TO_SYMBOL', extractedTokens);
+      await this.$store.dispatch("lexical/ANALYZE", this.code);
+      await this.$store.dispatch('tokenizer/CONVERT_TO_SYMBOL');
 
       const lexicalErrors = this.$store.getters['lexical/errors'];
       if (lexicalErrors.length) {
         this.playLoading = false;
-        this.displayAlert('error', 'Error/s found!\\Please check the Errors Table for details...');
+        this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
-      await this.$store.dispatch("syntax/ANALYZE", extractedTokens);
+      await this.$store.dispatch("syntax/ANALYZE");
       const syntaxErrors = this.$store.getters['syntax/errors'];
       if (syntaxErrors.length) {
         this.playLoading = false;
-        this.displayAlert('error', 'Error/s found!\nPlease check the Errors Table for details...');
+        this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
       this.playLoading = false;
-      this.displayAlert('success', 'Run success! No errors found!');
+      this.displayAlert('success', 'Run success!<br />No errors found!');
     },
   },
   computed: {

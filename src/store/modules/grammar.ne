@@ -4,26 +4,49 @@
 
   const lexer = moo.compile({
     id: "id",
-    data_type: "dataType",
-    constant: "constant",
-    typecase: "typecast",
-    object: "object",
+
+    string_lit: "stringLit",
+    nega_float_num_lit: "negaFloatNumLit",
+    float_num_lit: "floatNumLit",
+    nega_num_lit: "negaNumLit",
+    num_lit: "numLit",
+    bool_lit: ["true", "false"],
+    null_word: "null",
+
+    seed: "seed",
+    number_datatype: "number",
+    string_datatype: "string",
+    boolean_datatype: "boolean",
+    stone_datatype: "stone",
+    void_datatype: "void",
+    object_datatype: "object",
+
+    num_typecast: "num",
+    str_typecast: "str",
+    bol_typecast: "bol",
+
+    water: "water",
+    carve: "carve",
+
     if_word: "if",
     elif: "elif",
     else_word: "else",
+
     cycle: "cycle",
     during: "during",
-    output: "output",
-    input: "input",
-    control: "control",
+    skip_word: "skip",
+    break_word: "break",
+
     return_word: "return",
+
     trim: "trim",
     size: "size",
-    null_word: "null",
-    void_word: "void",
-    arr_access: "arrAccess",
-    str_access: "strAccess",
-    pos_access: "posAccess",
+    absorb: "absorb",
+    insert_word: "insert",
+    uproot: "uproot",
+    atChar_word: "atChar",
+    atPos_word: "atPos",
+
     comment: "comment",
     multiline: "multiline",
 
@@ -40,30 +63,39 @@
     R_sqr: "RSqr",
 
     nega_sign: "negaSign",
-    add_assign_op: "addAssignOp",
-    assign_only_op: "assignOnlyOp",
-    assign_op: "assignOp",
-    relate_op_bool: "relateOpBool",
-    relate_op_num: "relateOpBoolNum",
-    arith_op: "arithOp",
     add_op: "addOp",
+    subtract_op: "subtractOp",
+    multiply_op: "multiplyOp",
+    divide_op: "divideOp",
+    modulo_op: "moduloOp",
+
+    add_assign_op: "addAssignOp",
+    subtract_assign_op: "subtractAssignOp",
+    multiply_assign_op: "multiplyAssignOp",
+    divide_assign_op: "divideAssignOp",
+    modulo_assign_op: "moduloAssignOp",
+
+    assign_only_op: "assignOnlyOp",
+    not_equal_op: "notEqualOp",
+    equal_to_op: "equalToOp",
+
     not_op: "notOp",
     and_op: "andOp",
     or_op: "orOp",
-    unary: "unary",
 
-    string_lit: "stringLit",
-    bool_lit: "boolLit",
-    nega_float_num_lit: "negaFloatNumLit",
-    float_num_lit: "floatNumLit",
-    nega_num_lit: "negaNumLit",
-    num_lit: "numLit"
+    greater_than_op: "greaterThanOp",
+    greater_equal_op: "greaterThanEqualOp",
+    less_than_op: "lessThanOp",
+    less_equal_op: "lessThanEqualOp",
+
+    unary: ["increment", "decrement"],
   });
 %}
 
 @lexer lexer
 
-program -> statement
+program
+  -> statement
 
 statement
   -> desired_statement statement
@@ -83,9 +115,17 @@ desired_statement
   | id_use # this is use to refer the variable reassignment statements and the function call statements
   # | null
 
-declare_data -> data_id data_choices
+data_types
+  -> %seed
+  | %number_datatype
+  | %string_datatype
+  | %boolean_datatype
 
-data_id -> %data_type %id
+declare_data
+  -> data_id data_choices
+
+data_id
+  -> data_types %id
 
 data_choices
   -> %terminator
@@ -93,12 +133,28 @@ data_choices
   | %assign_only_op expressions %terminator
 
 operators
-  -> %relate_op_bool 
-  | %relate_op_num 
-  | %arith_op 
-  | %add_op 
-  | %or_op 
-  | %and_op 
+  -> relate_op_bool
+  | relate_op_num
+  | arith_op
+  | %or_op
+  | %and_op
+
+relate_op_bool
+  -> %not_equal_op
+  | %equal_to_op
+
+relate_op_num
+  -> %greater_than_op
+  | %greater_equal_op
+  | %less_than_op
+  | %less_equal_op
+
+arith_op
+  -> %add_op
+  | %subtract_op
+  | %multiply_op
+  | %divide_op
+  | %modulo_op
 
 expressions
   -> data_nonfunction expression_yes
@@ -125,6 +181,7 @@ data_nonfunction
   | ids # use to refer for the function call and the solo ID only
   | %L_paren expressions %R_paren
   | %not_op more_not data_nonfunction
+  | array_literal
 
 expression_yes
   -> operators expressions
@@ -133,7 +190,8 @@ expression_yes
 const_declare
   -> const_start %assign_only_op literals %terminator
 
-const_start -> %constant %id
+const_start
+  -> %stone_datatype %id
 
 object_declare
   -> object_id object_choice
@@ -142,7 +200,8 @@ object_choice
   -> %terminator
   | %assign_only_op object_wrapper %terminator
 
-object_id -> %object %id
+object_id
+  -> %object_datatype %id
 
 object_wrapper
   -> %L_curl object_content %R_curl
@@ -176,8 +235,8 @@ id_use
   -> %id assign_choice %terminator
 
 assign_choice
-  -> assign_op expressions 
-  | function_call 
+  -> assign_op expressions
+  | function_call
   | expression_yes
 
 #id_options
@@ -196,7 +255,8 @@ append_element
   -> %comma array_contents
   | null
 
-void_declare -> %void_word %id function_dec
+void_declare
+  -> %void_datatype %id function_dec
 
 function_dec
   -> paren_wrapper %L_curl statement %R_curl
@@ -204,7 +264,8 @@ function_dec
 function_call
   -> paren_wrapper
 
-paren_wrapper -> %L_paren paren_content %R_paren
+paren_wrapper
+  -> %L_paren paren_content %R_paren
 
 paren_content
   -> expressions paren_content_append
@@ -253,15 +314,14 @@ unary_statement
 cond_statement
   -> %L_curl statement %R_curl
 
-
 # if/elif/else statements
-else_statement 
+else_statement
   -> %else_word cond_statement
-  |null 
+  | null
 
 elif_statement
   -> %elif %L_paren bool_expr %R_paren cond_statement elif_statement else_statement
-  |null
+  | null
 
 if_statement
   -> %if_word %L_paren bool_expr %R_paren cond_statement elif_statement else_statement
@@ -296,7 +356,13 @@ size_function
 
 # type casting
 type_casting
-  -> %typecase %L_paren all_datatype %R_paren
+  -> typecast %L_paren all_datatype %R_paren
+
+typecast
+  -> %num_typecast
+  | %str_typecast
+  | %bol_typecast
+
 #expressions
 expression
   -> num_expr
@@ -313,12 +379,12 @@ num_operand
 
 additional_num
   -> cond_operator num_operand additional_num
-  | null 
+  | null
 
 cond_operator
-  -> %arith_op
-  | %add_op
-  | %relate_op
+  -> arith_op
+  | relate_op_bool
+  | relate_op_num
 
 bool_expr
   -> bool_operand additional_bool
@@ -333,7 +399,7 @@ additional_bool
   | bool_op bool_operand additional_bool
 
 bool_op
-  -> %relate_op_bool
+  -> relate_op_bool
   | %or_op
   | %and_op
 
@@ -343,8 +409,12 @@ ids
 
 id_choices
   -> arrIndex object_yes
-  | %period obj_prop
+  | %period period_choice
   | function_call
+
+period_choice
+  -> obj_prop
+  | arr_method_keyword
 
 object_yes
   -> %period obj_prop
@@ -360,3 +430,13 @@ arrIndex
 arr2D
   -> null
   | %L_sqr %num_lit %R_sqr arr2D
+
+arr_method_keyword
+  -> %absorb %L_paren arr_method_param %R_paren
+  | %insert_word %L_paren num_literals %comma arr_method_param %R_paren
+  | %uproot %L_paren %R_paren
+
+arr_method_param
+  -> literals
+  | array_literal
+  | ids

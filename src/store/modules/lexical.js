@@ -234,8 +234,7 @@ export default {
         });
 
         commit('SET_INITIAL_TOKENS', tokenStream);
-        const finalTokenStream = await dispatch('ANALYZE_DELIMITERS')
-        return finalTokenStream;
+        await dispatch('ANALYZE_DELIMITERS');
 
       } catch(err) {
         console.log(err.message);
@@ -477,8 +476,6 @@ export default {
           commit('ADD_TO_FINAL_STREAM', current);
         }
       }
-
-      return state.finalTokenStream;
     }
   }
 }

@@ -1,6 +1,8 @@
 // const { Parser } = require("jison");
 const nearley = require("nearley");
 const grammar = require("./grammar.js");
+const cloneDeep = require('lodash/cloneDeep');
+
 export default {
 	namespaced: true,
 	state: {
@@ -18,10 +20,11 @@ export default {
 		}
 	},
 	actions: {
-		async ANALYZE({ commit }, tokenstream) {
+		async ANALYZE({ commit, rootGetters }) {
 			const tagaParse = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
-			let tokenStream = tokenstream.filter(t => t.token !== 'comment' && t.token !== 'multiline_comment');
+			const tokenStreamCopy = cloneDeep(rootGetters['lexical/lexemes']);
+			let tokenStream = tokenStreamCopy.filter(t => t.token !== 'comment' && t.token !== 'multiline_comment');
 			let currentToken;
 			try {
 				for (const token of tokenStream) {

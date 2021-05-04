@@ -1,3 +1,5 @@
+const cloneDeep = require('lodash/cloneDeep');
+
 export default {
   namespaced: true,
   state: {
@@ -58,9 +60,10 @@ export default {
     }
   },
   actions: {
-    CONVERT_TO_SYMBOL({ state, commit }, payload) {
+    CONVERT_TO_SYMBOL({ state, rootGetters, commit }) {
       commit('CLEAR_STREAM');
-      for (const entry of payload) {
+      const tokenStream = cloneDeep(rootGetters['lexical/lexemes']);
+      for (const entry of tokenStream) {
         const symbolEntries = Object.keys(state.symbols);
         if (symbolEntries.includes(entry.token)) {
           entry.token = state.symbols[entry.token];
