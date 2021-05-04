@@ -1,5 +1,21 @@
 <template>
   <v-container fluid py-10 fill-height>
+    <v-dialog v-model="showAlert" max-width="400px" max-height="400px">
+      <v-card>
+        <v-card-title :class="[ alertType === 'error' ? 'font-weight-bold error white--text text-center' : 'font-weight-bold success white--text text-center' ]">
+          {{ alertType.toUpperCase() }}
+        </v-card-title>
+        <v-card-text class="pa-4 my-4 text-center text-subtitle-1">
+          {{ alertMessage }}
+        </v-card-text>
+        <v-card-actions class="mx-2">
+          <v-btn @click="showAlert = !showAlert" :color="alertType" depressed rounded dark block>
+            Ok
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-row align="center" justify="space-around" class="pa-2">
       <!-- The code editor on the left -->
       <v-col xs="12" sm="12" md="6" lg="6" cols="6">
@@ -46,6 +62,7 @@
                   color="error"
                   v-bind="attrs"
                   v-on="on"
+                  @click="stopCode"
                 >
                   <v-icon x-large>cancel</v-icon>
                 </v-btn>
@@ -150,7 +167,7 @@ number wow = 123456789.987654321;
 number waw = ~12.213;
 number there = ~900;
 number arr = [1,2,3];
-string names = ["Alec","Miggy","Juan"];
+string names = ['Alec',"Miggy","Juan miggy\\"waw\\""];
 number twoD = [[1,2,3],[4,5,6],[7,8,9]];
 boolean isLegal = true;
 isLegal = false;
@@ -209,7 +226,7 @@ export default {
   name: "Code",
   components: { PrismEditor },
   data: () => ({
-    code: "",
+    code: code2,
     playLoading: false,
     lexemeHeader: [
       { text: "Line", align: "center", sortable: "false", value: "line" },
@@ -228,6 +245,9 @@ export default {
       { text: "Line", align: "center", sortable: "false", value: "line" },
     ],
     syntaxes: [],
+    alertType: '',
+    alertMessage: '',
+    showAlert: false
   }),
   mounted() {
     // this.runCode();
@@ -238,33 +258,63 @@ export default {
     },
     clearEditor() {
       this.code = "";
-      this.$store.commit("lexical/CLEAR_LEXEMES");
+      this.clearState();
+    },
+    clearState() {
+      this.$store.commit("lexical/CLEAR_TOKENS");
+      this.$store.commit("tokenizer/CLEAR_STREAM");
+      this.$store.commit("lexical/CLEAR_ERRORS");
       this.$store.commit("syntax/CLEAR_ERRORS");
+    },
+    stopCode() {
+      this.playLoading = false;
+    },
+    displayAlert(type, message) {
+      this.alertType = type;
+      this.alertMessage = message;
+      this.showAlert = true;
     },
     async runCode() {
       if (!this.code) return;
       this.playLoading = true;
-      this.$store.commit("lexical/CLEAR_LEXEMES");
-      this.$store.commit("syntax/CLEAR_ERRORS");
-      await this.$store.dispatch("lexical/ANALYZE", this.code);
-      await this.$store.dispatch("lexical/ANALYZE_DELIMITERS");
-      await this.$store.dispatch("syntax/ANALYZE", this.code);
+      this.clearState();
+
+      const extractedTokens = await this.$store.dispatch("lexical/ANALYZE", this.code);
+      await this.$store.dispatch('tokenizer/CONVERT_TO_SYMBOL', extractedTokens);
+
+      const lexicalErrors = this.$store.getters['lexical/errors'];
+      if (lexicalErrors.length) {
+        this.playLoading = false;
+        this.displayAlert('error', 'Error/s found!\\Please check the Errors Table for details...');
+        return;
+      }
+
+      await this.$store.dispatch("syntax/ANALYZE", extractedTokens);
+      const syntaxErrors = this.$store.getters['syntax/errors'];
+      if (syntaxErrors.length) {
+        this.playLoading = false;
+        this.displayAlert('error', 'Error/s found!\nPlease check the Errors Table for details...');
+        return;
+      }
+
       this.playLoading = false;
+      this.displayAlert('success', 'Run success! No errors found!');
     },
   },
   computed: {
     lexemeTable() {
-      return this.$store.getters["lexical/lexemes"];
+      return this.$store.getters["tokenizer/tokens"];
     },
     errorTable() {
-      return this.$store.getters["syntax/errors"];
+      const lexicalErrors = this.$store.getters['lexical/errors'];
+      const syntaxErrors = this.$store.getters['syntax/errors'];
+      return [...lexicalErrors, ...syntaxErrors];
     },
   },
   watch: {
     code(val) {
       if (!val) {
-        this.$store.commit("lexical/CLEAR_LEXEMES");
-        this.$store.commit("syntax/CLEAR_ERRORS");
+        this.clearState();
       }
     },
   },

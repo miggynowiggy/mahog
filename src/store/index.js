@@ -1,10 +1,9 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import keywords from "./modules/keywords";
-import symbols from "./modules/symbols";
 import lexical from "./modules/lexical";
-import tokenizer from "./modules/tokenizer";
 import syntax from "./modules/syntax";
+import tokenizer from "./modules/tokenizer";
+import errors from './modules/errors';
 
 Vue.use(Vuex);
 
@@ -22,10 +21,9 @@ export default new Vuex.Store({
 	},
 	actions: {},
 	modules: {
-		keywords,
-		symbols,
 		lexical,
-		tokenizer,
 		syntax,
+		tokenizer,
+		errors
 	},
 });
