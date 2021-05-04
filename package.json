@@ -21,6 +21,7 @@
     "underscore": "^1.12.0",
     "unicode-categories": "^0.9.1",
     "vue": "^2.6.11",
+    "vue-codemirror": "^4.0.6",
     "vue-prism-editor": "^1.2.2",
     "vue-router": "^3.2.0",
     "vuetify": "^2.4.0",
