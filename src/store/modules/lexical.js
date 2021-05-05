@@ -215,6 +215,7 @@ export default {
         while(token) {
           token = reader.next();
           currentToken = token;
+          console.log(token);
           if (token) {
             tokenStream.push({
               lexeme: token.value,

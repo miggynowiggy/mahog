@@ -53,6 +53,13 @@ isOK = true;
 number ctr = 0;
 during(!(!isOK) || (ctr < 3)){
   carve(arr[ctr]);
+
+  if (isOk) {
+    skip;
+  } else {
+    break;
+  }
+
   ctr--;
 }
 
