@@ -1,4 +1,5 @@
 const cloneDeep = require('lodash/cloneDeep');
+import description from './description';
 
 export default {
   namespaced: true,
@@ -65,6 +66,7 @@ export default {
       const tokenStream = cloneDeep(rootGetters['lexical/lexemes']);
       for (const entry of tokenStream) {
         const symbolEntries = Object.keys(state.symbols);
+        entry.description = description[entry.token];
         if (symbolEntries.includes(entry.token)) {
           entry.token = state.symbols[entry.token];
         }

@@ -24,7 +24,7 @@ export default {
 			const tagaParse = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
 			const tokenStreamCopy = cloneDeep(rootGetters['lexical/lexemes']);
-			let tokenStream = tokenStreamCopy.filter(t => t.token !== 'comment' && t.token !== 'multiline_comment');
+			let tokenStream = tokenStreamCopy.filter(t => t.token !== 'comment' && t.token !== 'multilineComment');
 			let currentToken;
 			try {
 				for (const token of tokenStream) {

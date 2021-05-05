@@ -15,21 +15,19 @@
       </v-card>
     </v-dialog>
 
-    <v-row align="center" justify="space-around" class="pa-2">
+    <v-row align="start" justify="space-around" class="pa-2">
       <!-- The code editor on the left -->
       <v-col xs="12" sm="12" md="6" lg="6" cols="6">
-        <v-card height="80vh" class="pa-2" elevation="24">
-          <prism-editor
-            class="my-editor"
-            v-model="code"
-            :highlight="highlight"
-            line-numbers
-            autoStyleLineNumbers
-          ></prism-editor>
-        </v-card>
+        <codemirror
+          @cursorActivity="highlight"
+          ref="codeEditor"
+          v-model="code"
+          :options="cmOptions"
+          class="elevation-24"
+        />
       </v-col>
       <!-- The run, stop, clear button in the middle -->
-      <v-col cols="12" sm="12" md="1" lg="1">
+      <v-col cols="12" sm="12" md="1" lg="1" align-self="center">
         <v-row align="center" justify="center" wrap>
           <v-col xs="10" sm="10" md="12" lg="12" align="center">
             <v-tooltip top>
@@ -91,10 +89,10 @@
           </v-col>
         </v-row>
       </v-col>
-      <!-- The two tables on the right -->
+
+      <!-- Lexeme Table -->
       <v-col xs="12" sm="12" md="5" lg="5" cols="5">
         <v-row align="center" justify="center" wrap>
-          <!-- Lexeme table Card -->
           <v-col cols="12">
             <v-card height="auto" class="pa-2" elevation="13">
               <v-card-title class="text-h4 font-weight-bold primary--text">
@@ -103,7 +101,7 @@
               <v-card-text>
                 <v-data-table
                   :headers="lexemeHeader"
-                  :items="lexemeTable"
+                  :items="lexemes"
                   :items-per-page="10"
                   no-data-text="Press 'Run' to see the tokens..."
                   disable-sort
@@ -115,17 +113,45 @@
         </v-row>
       </v-col>
     </v-row>
+    <!-- Lexeme table Card -->
+    <!-- <v-row align="center" justify="center" wrap>
+      <v-col cols="10">
+        <v-card height="auto" class="pa-2" elevation="13">
+          <v-card-title class="text-h4 font-weight-bold primary--text">
+            Lexeme Table
+          </v-card-title>
+          <v-card-text>
+            <v-data-table
+              :headers="lexemeHeader"
+              :items="lexemeTable"
+              :items-per-page="10"
+              no-data-text="Press 'Run' to see the tokens..."
+              disable-sort
+              dense
+            ></v-data-table>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row> -->
     <v-row align="center" justify="center" wrap class="mt-5">
       <v-col cols="10">
         <!-- The Syntax Analysis Card -->
         <v-card class="pa-2" elevation="13">
           <v-card-title class="text-h4 font-weight-bold primary--text">
-            Errors
+            <v-badge
+              :content="errors.length"
+              :value="errors.length"
+              color="error"
+              overlap
+              offset-x="-10"
+            >
+              Errors
+            </v-badge>
           </v-card-title>
           <v-card-text>
             <v-data-table
               :headers="syntaxHeader"
-              :items="errorTable"
+              :items="errors"
               :items-per-page="5"
               disable-sort
               dense
@@ -139,122 +165,128 @@
 </template>
 
 <script>
-// import Prism Editor
-import { PrismEditor } from "vue-prism-editor";
-import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
+import { code2 } from './sampleCodes';
+import { codemirror, CodeMirror } from 'vue-codemirror';
 
-// import highlighting library (you can use any library you want just return html string)
-import { highlight, languages } from "prismjs/components/prism-core";
-import "prismjs/components/prism-clike";
-import "prismjs/components/prism-javascript";
-import "prismjs/themes/prism-tomorrow.css"; // import syntax highlighting styles
-const code1 = `
-seed something;
-seed _num = "2";
-stone wawThisIsLong = 21;
-number wow = 123456789.987654321;
-number waw = ~12.213;
-number there = ~900;
-boolean isLegal = true;
-names = ["Some", "Valuable", "String"];
-`;
+require("codemirror/addon/mode/simple.js");
 
-const code2 = `
-seed something;
-seed _num = "2";
-stone wawThisIsLong = 21;
-number wow = 123456789.987654321;
-number waw = ~12.213;
-number there = ~900;
-number arr = [1,2,3];
-string names = ['Alec',"Miggy","Juan miggy\\"waw\\""];
-number twoD = [[1,2,3],[4,5,6],[7,8,9]];
-boolean isLegal = true;
-isLegal = false;
+import "codemirror/lib/codemirror.css";
+import "codemirror/theme/mbo.css";
+import "codemirror/addon/display/fullscreen.css";
+import "codemirror/addon/scroll/simplescrollbars.css";
 
-twoD.absorb([1, 3, 2]);
-twoD.insert(2, [1]);
-twoD.uproot();
+import "codemirror/addon/edit/matchbrackets";
+import "codemirror/addon/lint/lint";
+import "codemirror/addon/edit/closebrackets";
+import "codemirror/addon/selection/active-line";
+import "codemirror/addon/display/fullscreen";
+import "codemirror/addon/search/searchcursor";
+import "codemirror/addon/search/search";
+import "codemirror/addon/scroll/simplescrollbars";
+import "codemirror/addon/display/placeholder";
+import "codemirror/addon/comment/comment";
 
-@this is some comment
+CodeMirror.defineSimpleMode("mahog", {
+  start: [
+    { regex: /"(?:[^\\]|\\.)*?(?:"|$)/, token: "string" },
+    { regex: /'(?:\\['\\rn]|[^'\\\n])*?'/, token: "string"},
+    {
+      regex: /(?:seed|number|string|boolean|stone|object|num|str|bol|if|elif|else|carve|water|cycle|during|skip|break|return|trim|size|void|absorb|insert|uproot|atChar|atPos)\b/,
+      token: "keyword"
+    },
+    { regex: /null|true|false/, token: "atom" },
+    {
+      regex: /[~]?(?:\d+\.?\d*)/i,
+      token: "number"
+    },
+    { regex: /[-+\/*%&|=<>!]+/, token: "operator" },
+    { regex: /[a-z\_0-9A-Z$]+[\w$]*/, token: "variable" },
 
-@?
-multi
-line-height
-comments
-?@
+    { regex: /\@\?/, token: "comment", next: "comment" },
+    { regex: /\@.*/, token: "comment "},
 
-if(isOK) {
-	carve("nice");
-} elif(isOK && num1 == 2) {
-	carve("nice nice");
-} else {
-	carve("nice x3");
-}
-
-cycle(number num1 = 2; isOK; num1++) {
-  carve(num1);
-  if(num1 == 5) {
-    isOK = false;
-  }
-}
-
-isOK = true;
-number ctr = 0;
-during(!(!isOK) || (ctr < 3)){
-  carve(arr[ctr]);
-  ctr--;
-}
-
-number func(number x, number y) {
-  return x + y;
-}
-
-carve('hehe');
-
-string myNum = water("Enter num: ");
-
-object miggy = {
-	string name: "Miggy",
-	number age: 21,
-	boolean isLegal: true,
-	string subjs: ["CS", "IT", "MIS"],
-};
-`;
+  ],
+  comment: [
+    { regex: /.*\?\@/, token: "comment", next: "start" },
+    { regex: /.*/, token: "comment"}
+  ],
+  meta: { dontIndentStates: ["comment"], lineComment: "@"}
+})
 
 export default {
   name: "Code",
-  components: { PrismEditor },
-  data: () => ({
-    code: code2,
-    playLoading: false,
-    lexemeHeader: [
-      { text: "Line", align: "center", sortable: "false", value: "line" },
-      { text: "Lexeme", align: "center", sortable: "false", value: "lexeme" },
-      {
-        text: "Token",
-        align: "center",
-        sortable: "false",
-        value: "token",
+  components: { codemirror },
+  data() {
+    const self = this;
+    return {
+      code: code2,
+      cmOptions: {
+        tabSize: 2,
+        theme: "mbo",
+        mode: "mahog",
+        lineNumbers: true,
+        line: true,
+        autofocus: true,
+        lineWiseCopyCut: true,
+        autoCloseBrackets: {
+          pairs: `(){}[]||""''`,
+          explode: "[]{}()"
+        },
+        matchBrackets: true,
+        styleActiveLine: true,
+        scrollbarStyle: "overlay",
+        lint: true,
+        dragDrop: false,
+        extraKeys: {
+          "Ctrl-S" : () => self.saveChanges(),
+          "Cmd-S" : () => self.saveChanges(),
+          "Ctrl-O": () => self.openFile(),
+          "Cmd-O": () => self.openFile(),
+          "Ctrl-R": () => self.runCode(),
+          "Cmd-R": () => self.runCode(),
+          "Ctrl-/": (cm) => cm.execCommand("toggleComment"),
+          "Cmd-/": (cm) => cm.execCommand("toggleComment"),
+          Tab: (cm) => cm.replaceSelection("  ", "end")
+        }
       },
-    ],
-    lexemes: [],
-    syntaxHeader: [
-      { text: "Code", align: "left", sortable: "false", value: "code" },
-      { text: "Message", align: "center", sortable: "false", value: "message" },
-      { text: "Line", align: "center", sortable: "false", value: "line" },
-    ],
-    syntaxes: [],
-    alertType: '',
-    alertMessage: '',
-    showAlert: false
-  }),
-  mounted() {
-    // this.runCode();
+      cmCursorPos: {
+        line: 1,
+        ch: 0
+      },
+      playLoading: false,
+      lexemeHeader: [
+        { text: "Line", align: "left", sortable: "false", value: "line" },
+        { text: "Lexeme", align: "left", sortable: "false", value: "lexeme" },
+        {
+          text: "Token",
+          align: "left",
+          sortable: "false",
+          value: "token",
+        },
+        {
+          text: "Description",
+          align: "center",
+          sortable: false,
+          value: "description"
+        }
+      ],
+      syntaxHeader: [
+        { text: "Code", align: "left", sortable: "false", value: "code" },
+        { text: "Message", align: "center", sortable: "false", value: "message" },
+        { text: "Line", align: "center", sortable: "false", value: "line" },
+      ],
+      alertType: '',
+      alertMessage: '',
+      showAlert: false
+    }
   },
   methods: {
-    highlight(code) {
-      return highlight(code, languages.js);
+    highlight(cursor) {
+      const { ch, line } = cursor.getCursor();
+      this.cmCursorPos = Object.assign({}, this.cmCursorPos, {
+        ch,
+        line: line + 1
+      });
     },
     clearEditor() {
       this.code = "";
@@ -273,6 +305,12 @@ export default {
       this.alertType = type;
       this.alertMessage = message;
       this.showAlert = true;
+    },
+    saveChanges() {
+      this.displayAlert('success', 'You unlocked a secret command: SAVE!');
+    },
+    openFile() {
+      this.displayAlert('success', 'You unlocked a secret command: OPEN FILE!');
     },
     async runCode() {
       if (!this.code) return;
@@ -302,10 +340,10 @@ export default {
     },
   },
   computed: {
-    lexemeTable() {
+    lexemes() {
       return this.$store.getters["tokenizer/tokens"];
     },
-    errorTable() {
+    errors() {
       const lexicalErrors = this.$store.getters['lexical/errors'];
       const syntaxErrors = this.$store.getters['syntax/errors'];
       return [...lexicalErrors, ...syntaxErrors];
@@ -322,20 +360,8 @@ export default {
 </script>
 
 <style>
-/* required class */
-.my-editor {
-  /* we dont use `language-` classes anymore so thats why we need to add background and text color manually */
-  background: #2d2d2d;
-  color: #ccc;
-  height: 100%;
-  padding: 15px;
-
-  /* you must provide font-family font-size line-height. Example: */
-  font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace;
-}
-
-/* optional class for removing the outline */
-.prism-editor__textarea:focus {
-  outline: none;
-}
+  .CodeMirror {
+    height: 75vh;
+    border-radius: 5px;
+  }
 </style>

@@ -17,7 +17,8 @@
 
 		<v-main>
 			<v-container fluid fill-height pa-0 dark>
-				<v-row align="center" justify="center" wrap mt-n6>
+				<Code />
+				<!-- <v-row align="center" justify="center" wrap mt-n6>
 					<v-col cols="12">
 						<v-tabs
 							v-model="currentTab"
@@ -50,7 +51,7 @@
 							</v-tabs-items>
 						</v-tabs>
 					</v-col>
-				</v-row>
+				</v-row> -->
 			</v-container>
 		</v-main>
 		<v-footer app absolute>
@@ -68,22 +69,19 @@
 
 <script>
 	import Code from "@/views/Code.vue";
-	import References from "@/views/References.vue";
+	// import References from "@/views/References.vue";
 	export default {
 		created() {
 			this.$vuetify.theme.dark = true;
 		},
 		name: "App",
-		components: { Code, References },
+		components: {
+			Code
+			// References
+		},
 
 		data: () => ({
 			currentTab: null,
-		}),
-
-		watch: {
-			currentTab(val) {
-				console.log(val);
-			},
-		},
+		})
 	};
 </script>
