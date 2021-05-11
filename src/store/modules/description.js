@@ -18,7 +18,7 @@ const description = {
   "during": "while-loop keyword",
   "skip": "looping control statement, used to proceed to the next iteration",
   "break": "looping control statement, used to force stop a loop",
-  "return": "return keyword",
+  "return_word": "return keyword",
   "trim": "a function that sets the precision of a float number",
   "size": "a function that returns the length of a string or an array",
   "null": "signifies an empty value",

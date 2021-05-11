@@ -18,79 +18,83 @@
     <v-row align="start" justify="space-around" class="pa-2">
       <!-- The code editor on the left -->
       <v-col xs="12" sm="12" md="6" lg="6" cols="6">
-        <codemirror
-          @cursorActivity="highlight"
-          ref="codeEditor"
-          v-model="code"
-          :options="cmOptions"
-          class="elevation-24"
-        />
-      </v-col>
-      <!-- The run, stop, clear button in the middle -->
-      <v-col cols="12" sm="12" md="1" lg="1" align-self="center">
-        <v-row align="center" justify="center" wrap>
-          <v-col xs="10" sm="10" md="12" lg="12" align="center">
-            <v-tooltip top>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  :icon="$vuetify.breakpoint.mdAndUp"
-                  :block="$vuetify.breakpoint.smAndDown"
-                  :loading="playLoading"
-                  dark
-                  x-large
-                  color="success"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="runCode"
-                >
-                  <v-icon x-large>play_circle_filled</v-icon>
-                </v-btn>
-              </template>
-              <span class="text-subtitle-1">Run Code</span>
-            </v-tooltip>
+        <v-row row wrap>
+          <!-- The run, stop, clear button in the middle -->
+          <v-col cols="12" align-self="start">
+            <v-row align="center" justify="start" wrap>
+              <v-col cols="1" align="center">
+                <v-tooltip top>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      :icon="$vuetify.breakpoint.mdAndUp"
+                      :block="$vuetify.breakpoint.smAndDown"
+                      :loading="playLoading"
+                      dark
+                      x-large
+                      color="success"
+                      v-bind="attrs"
+                      v-on="on"
+                      @click="runCode"
+                    >
+                      <v-icon x-large>play_circle_filled</v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="text-subtitle-1">Run Code</span>
+                </v-tooltip>
+              </v-col>
+              <v-col cols="1" align="center">
+                <v-tooltip top>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      :icon="$vuetify.breakpoint.mdAndUp"
+                      :block="$vuetify.breakpoint.smAndDown"
+                      dark
+                      x-large
+                      color="error"
+                      v-bind="attrs"
+                      v-on="on"
+                      @click="stopCode"
+                    >
+                      <v-icon x-large>cancel</v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="text-subtitle-1">Stop Code</span>
+                </v-tooltip>
+              </v-col>
+              <v-col cols="1" align="center">
+                <v-tooltip top>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      :icon="$vuetify.breakpoint.mdAndUp"
+                      :block="$vuetify.breakpoint.smAndDown"
+                      dark
+                      large
+                      color="accent"
+                      v-bind="attrs"
+                      v-on="on"
+                      @click="clearEditor"
+                    >
+                      <v-icon large>backspace</v-icon>
+                    </v-btn>
+                  </template>
+                  <span class="text-subtitle-1">Clear Code Editor</span>
+                </v-tooltip>
+              </v-col>
+            </v-row>
           </v-col>
-          <v-col xs="10" sm="10" md="12" lg="12" align="center">
-            <v-tooltip right>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  :icon="$vuetify.breakpoint.mdAndUp"
-                  :block="$vuetify.breakpoint.smAndDown"
-                  dark
-                  x-large
-                  color="error"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="stopCode"
-                >
-                  <v-icon x-large>cancel</v-icon>
-                </v-btn>
-              </template>
-              <span class="text-subtitle-1">Stop Code</span>
-            </v-tooltip>
-          </v-col>
-          <v-col xs="10" sm="10" md="12" lg="12" align="center">
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  :icon="$vuetify.breakpoint.mdAndUp"
-                  :block="$vuetify.breakpoint.smAndDown"
-                  dark
-                  large
-                  color="accent"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="clearEditor"
-                >
-                  <v-icon large>backspace</v-icon>
-                </v-btn>
-              </template>
-              <span class="text-subtitle-1">Clear Code Editor</span>
-            </v-tooltip>
+          <v-col cols="12">
+            <codemirror
+              @cursorActivity="highlight"
+              ref="codeEditor"
+              v-model="code"
+              :options="cmOptions"
+              class="elevation-24"
+            />
           </v-col>
         </v-row>
       </v-col>
 
-      <!-- Lexeme Table -->
+      <!-- Lexeme Table and Errors Table -->
       <v-col xs="12" sm="12" md="5" lg="5" cols="5">
         <v-row align="center" justify="center" wrap>
           <v-col cols="12">
@@ -110,55 +114,32 @@
               </v-card-text>
             </v-card>
           </v-col>
+          <v-col cols="12">
+            <v-card height="auto" class="pa-2" elevation="13">
+              <v-card-title class="text-h4 font-weight-bold primary--text">
+                <v-badge
+                  :content="errors.length"
+                  :value="errors.length"
+                  color="error"
+                  overlap
+                  offset-x="-10"
+                >
+                  Errors
+                </v-badge>
+              </v-card-title>
+              <v-card-text>
+                <v-data-table
+                  :headers="errorHeaders"
+                  :items="errors"
+                  :items-per-page="5"
+                  disable-sort
+                  dense
+                  no-data-text="No errors..."
+                ></v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-col>
         </v-row>
-      </v-col>
-    </v-row>
-    <!-- Lexeme table Card -->
-    <!-- <v-row align="center" justify="center" wrap>
-      <v-col cols="10">
-        <v-card height="auto" class="pa-2" elevation="13">
-          <v-card-title class="text-h4 font-weight-bold primary--text">
-            Lexeme Table
-          </v-card-title>
-          <v-card-text>
-            <v-data-table
-              :headers="lexemeHeader"
-              :items="lexemeTable"
-              :items-per-page="10"
-              no-data-text="Press 'Run' to see the tokens..."
-              disable-sort
-              dense
-            ></v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row> -->
-    <v-row align="center" justify="center" wrap class="mt-5">
-      <v-col cols="10">
-        <!-- The Syntax Analysis Card -->
-        <v-card class="pa-2" elevation="13">
-          <v-card-title class="text-h4 font-weight-bold primary--text">
-            <v-badge
-              :content="errors.length"
-              :value="errors.length"
-              color="error"
-              overlap
-              offset-x="-10"
-            >
-              Errors
-            </v-badge>
-          </v-card-title>
-          <v-card-text>
-            <v-data-table
-              :headers="syntaxHeader"
-              :items="errors"
-              :items-per-page="5"
-              disable-sort
-              dense
-              no-data-text="No errors..."
-            ></v-data-table>
-          </v-card-text>
-        </v-card>
       </v-col>
     </v-row>
   </v-container>
@@ -270,7 +251,8 @@ export default {
           value: "description"
         }
       ],
-      syntaxHeader: [
+      errorHeaders: [
+        { text: "Error Type", align: "left", sortable: "false", value: "type" },
         { text: "Code", align: "left", sortable: "false", value: "code" },
         { text: "Message", align: "center", sortable: "false", value: "message" },
         { text: "Line", align: "center", sortable: "false", value: "line" },
@@ -317,13 +299,13 @@ export default {
       this.playLoading = true;
       this.clearState();
 
-      await this.$store.dispatch("lexical/ANALYZE", this.code);
+      const lexerSuccess = await this.$store.dispatch("lexical/ANALYZE", this.code);
       await this.$store.dispatch('tokenizer/CONVERT_TO_SYMBOL');
 
       const lexicalErrors = this.$store.getters['lexical/errors'];
-      if (lexicalErrors.length) {
+      if (!lexerSuccess || lexicalErrors.length) {
         this.playLoading = false;
-        this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
@@ -331,7 +313,7 @@ export default {
       const syntaxErrors = this.$store.getters['syntax/errors'];
       if (syntaxErrors.length) {
         this.playLoading = false;
-        this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 

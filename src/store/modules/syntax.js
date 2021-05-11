@@ -24,10 +24,9 @@ export default {
 			const tagaParse = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
 			const tokenStreamCopy = cloneDeep(rootGetters['lexical/lexemes']);
-			let tokenStream = tokenStreamCopy.filter(t => t.token !== 'comment' && t.token !== 'multilineComment');
 			let currentToken;
 			try {
-				for (const token of tokenStream) {
+				for (const token of tokenStreamCopy) {
 					currentToken = { ...token };
 					tagaParse.feed(token.token);
 					const { results } = tagaParse;
@@ -40,6 +39,7 @@ export default {
 				console.log(err.message);
 				const splittedErrMessage = err.message.split("\n");
 				commit('ADD_ERROR', {
+					type: 'SYN',
 					code: 'syntax-error',
 					message: `
 						Unexpected token (${currentToken.lexeme}),

@@ -43,7 +43,7 @@ export default {
     keywords: [
       'seed', 'number', 'string', 'boolean', 'stone', 'object',
       'void', 'num', 'str', 'bol', 'if',  'elif', 'else', 'carve',
-      'water', 'cycle', 'during', 'skip', 'break', 'return', 'trim',
+      'water', 'cycle', 'during', 'skip', 'break', 'return_word', 'trim',
       'size', 'null', 'true', 'false', 'absorb', 'insert', 'uproot',
       'atChar', 'atPos'
     ],

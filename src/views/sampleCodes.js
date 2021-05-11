@@ -24,9 +24,12 @@ isLegal = false;
 
 twoD.absorb([1, 3, 2]);
 twoD.insert(2, [1]);
-twoD.uproot();
+twoD.uproot(2);
 
 @this is some comment
+
+seed waw;
+waw = 12;
 
 @?
 multi

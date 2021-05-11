@@ -30,7 +30,7 @@ export default {
           "during": "during",
           "skip": "skip",
           "break": "break",
-          "return": "return",
+          "return_word": "return",
           "trim": "trim",
           "size": "size",
           "null": "null",
@@ -67,7 +67,7 @@ export default {
         lineBreaks: true,
         // value: x => x.slice(2, -2)
       }],
-      comment: /[@].*\n/,
+      comment: /[@].*/,
 
       increment: "++",
       decrement: "--",
@@ -101,7 +101,8 @@ export default {
       subtractOp: "-",
       multiplyOp: "*",
       divideOp: "/",
-      moduloOp: "%"
+      moduloOp: "%",
+      quotations: ["'", '"']
     },
 
     // Delims
@@ -118,7 +119,7 @@ export default {
       keywords: ['NL', 'WS', 'LParen'],
       control: ['NL', 'WS', 'terminator'],
       unary: ['NL', 'WS', 'terminator', 'RCurl', 'RSqr', 'RParen'],
-      return: [
+      return_word: [
         'NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit',
         'floatNumLit', 'negaNumLit', 'numLit', 'terminator'
       ],
@@ -176,7 +177,15 @@ export default {
     unary: ['increment', 'decrement'],
     unaryOp: ['negaSign', 'notOp'],
     controls: ['skip', 'break'],
-    boolLit: ['true', 'false']
+    boolLit: ['true', 'false'],
+    stoppers: [
+      'addOp', 'subtractOp', 'multiplyOp', 'divideOp', 'moduloOp', 'andOp', 'orOp',
+      'lessThanOp', 'lessThanEqualOp', 'greaterOp', 'greaterThanEqualOp', 'equalToOp',
+      'notEqualOp', 'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'dividerAssignOp',
+      'moduloAssignOp', 'notEqualOp', 'equalToOp', 'terminator', 'period', 'comma', 'colon',
+      'L_paren', 'R_paren', 'L_curl', 'R_curl', 'L_sqr', 'R_sqr', 'NS', 'WS', 'increment',
+      'decrement'
+    ]
   },
   getters: {
 		lexemes: state => state.finalTokenStream,
@@ -215,8 +224,9 @@ export default {
         while(token) {
           token = reader.next();
           currentToken = token;
-          console.log(token);
+          // console.log(token);
           if (token) {
+            // console.log('lexer token: ', token)
             tokenStream.push({
               lexeme: token.value,
               token: `${token.type}`,
@@ -227,32 +237,33 @@ export default {
           }
         }
 
-        tokenStream.push({
-          lexeme: " ",
-          token: "WS",
-          line: lineCounter + 1,
-          col: 0
-        });
-
         commit('SET_INITIAL_TOKENS', tokenStream);
         await dispatch('ANALYZE_DELIMITERS');
+        return true;
 
       } catch(err) {
         console.log(err.message);
         const errMessage = err.message.split('\n');
-        const indexOfPointer = errMessage[3].indexOf("^");
-        const maySala = errMessage[2].charAt(indexOfPointer);
-        commit('ADD_ERROR', {
-          code: 'invalid-token',
-          message: `Unexpected token -> ${maySala}`,
-          line: lineCounter
-        })
+
+        if (errMessage.length) {
+          const indexOfPointer = errMessage[3].indexOf("^");
+          const maySala = errMessage[2].charAt(indexOfPointer);
+          commit('ADD_ERROR', {
+            type: 'LEX',
+            code: 'invalid-token',
+            message: `Unexpected token -> ${maySala}`,
+            line: lineCounter
+          })
+        }
+        return false;
       }
     },
 
     async ANALYZE_DELIMITERS({ state, commit }) {
       const empty = { token: '', line: null, col: null };
       const len = state.initialTokenStream.length;
+
+      let quotationEncountered = false;
 
       for (let index = 0; index < len; index++) {
         // const prev = index - 1 > 0 ? state.initialTokenStream[index - 1] : empty;
@@ -268,10 +279,33 @@ export default {
           continue;
         }
 
+        // Handle missing quotations for string literals
+        if (current.token === 'quotations' && !quotationEncountered) {
+          quotationEncountered = true;
+          continue;
+        } else if (quotationEncountered && state.stoppers.includes(current.token)) {
+          if (current.token !== 'NL' && current.token !== 'WS') {
+            commit('ADD_TO_FINAL_STREAM', current);
+          }
+
+          commit('ADD_ERROR', {
+            type: 'LEX',
+            code: 'missing-string-quotation',
+            message: 'String literal has missing quotation',
+            line: current.line,
+            col: current.col
+          });
+          quotationEncountered = false;
+          continue;
+        } else if (quotationEncountered) {
+          continue;
+        }
+
         // if consecutive tokens are both id, return an error
         // since this only means that the id exceeded the limit of characters
         if (current.token === 'id' && next.token === 'id') {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'identifier-limit-exceeded',
             message: 'Identifier length exceeded',
             line: current.line,
@@ -287,6 +321,7 @@ export default {
           && state.numbers.includes(next.token)
         ) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'numbers-limit-exceeded',
             message: 'Number Literal length limit exceeded',
             line: current.line,
@@ -299,6 +334,7 @@ export default {
         const negaSignDelimInvalid = !state.delims.negaSign.includes(next.token);
         if (current.token === 'negaSign' && negaSignDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiter',
             message: `Invalid use of negative symbol.`,
             line: current.line,
@@ -312,6 +348,7 @@ export default {
           && !state.operators.includes(next.token);
         if (current.token === 'id' && idDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Unexpected token after a variable name.`,
             line: current.line,
@@ -325,6 +362,7 @@ export default {
         const dataTypeDelimInvalid = !state.delims.dataTypes.includes(next.token);
         if (isTokenDataType && dataTypeDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Unexpected token after (${current.lexeme}), was expecting space or newline.`,
             line: current.line,
@@ -338,6 +376,7 @@ export default {
         const keywordDelimInvalid = !state.delims.keywords.includes(next.token);
         if (isTokenAKeyword && keywordDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Unexpected token after (${current.lexeme}), was expecting (.`,
             line: current.line,
@@ -350,6 +389,7 @@ export default {
         const operatorDelimInvalid = !state.delims.operators.includes(next.token);
         if (isTokenOperator && operatorDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Unexpected token after an operator`,
             line: current.line,
@@ -362,6 +402,7 @@ export default {
         const controlDelimInvalid = !state.delims.control.includes(next.token);
         if (isKeywordControl && controlDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Semi-colon is required at the end of control statements`,
             line: current.line,
@@ -370,9 +411,10 @@ export default {
           continue;
         }
 
-        const returnDelimInvalid = !state.delims.return.includes(next.token);
-        if (current.token === 'return' && returnDelimInvalid) {
+        const returnDelimInvalid = !state.delims.return_word.includes(next.token);
+        if (current.token === 'return_word' && returnDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after the return keyword.`,
             line: current.line,
@@ -384,6 +426,7 @@ export default {
         const elseDelimInvalid = !state.delims.else.includes(next.token);
         if (current.token === 'else' && elseDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Unexpected token after (${current.lexeme}), was expecting {.`,
             line: current.line,
@@ -395,6 +438,7 @@ export default {
         const periodDelimInvalid = !state.delims.period.includes(next.token);
         if (current.token === 'period' && periodDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after dot (.) symbol.`,
             line: current.line,
@@ -407,6 +451,7 @@ export default {
         const unaryDelimInvalid = !state.delims.unary.includes(next.token);
         if (isTokenUnary && unaryDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after unary operator.`,
             line: current.line,
@@ -418,6 +463,7 @@ export default {
         const notOpDelimInvalid = !state.delims.notOp.includes(next.token);
         if (current.token === 'notOp' && notOpDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after not (!) operator.`,
             line: current.line,
@@ -430,6 +476,7 @@ export default {
         const numberDelimInvalid = !state.delims.numbers.includes(next.token);
         if (isTokenNumber && numberDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after a number literal.`,
             line: current.line,
@@ -441,6 +488,7 @@ export default {
         const stringDelimInvalid = !state.delims.stringLit.includes(next.token);
         if (current.token === 'stringLit' && stringDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after a string literal.`,
             line: current.line,
@@ -453,6 +501,7 @@ export default {
         const boolLitDelimInvalid = !state.delims.boolLit.includes(next.token);
         if (isTokenBoolLit && boolLitDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after a boolean literal.`,
             line: current.line,
@@ -464,6 +513,7 @@ export default {
         const nullDelimInvalid = !state.delims.null.includes(next.token);
         if (current.token === 'null' && nullDelimInvalid) {
           commit('ADD_ERROR', {
+            type: 'LEX',
             code: 'invalid-delimiters',
             message: `Invalid token after a null literal.`,
             line: current.line,
