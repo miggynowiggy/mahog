@@ -185,7 +185,10 @@ export default {
       'moduloAssignOp', 'notEqualOp', 'equalToOp', 'terminator', 'period', 'comma', 'colon',
       'L_paren', 'R_paren', 'L_curl', 'R_curl', 'L_sqr', 'R_sqr', 'NS', 'WS', 'increment',
       'decrement'
-    ]
+    ],
+
+    // Record similar identifier names
+    similarID: []
   },
   getters: {
 		lexemes: state => state.finalTokenStream,
@@ -195,6 +198,7 @@ export default {
     CLEAR_TOKENS(state) {
       state.initialTokenStream = [];
       state.finalTokenStream = [];
+      state.similarID = [];
     },
     SET_INITIAL_TOKENS(state, payload) {
       state.initialTokenStream = [...payload];
@@ -207,6 +211,9 @@ export default {
     },
     ADD_ERROR(state, payload) {
       state.errors.push(payload);
+    },
+    ADD_TO_SIMILAR_ID(state, payload) {
+      state.similarID.push(payload);
     }
   },
   actions: {
@@ -258,6 +265,7 @@ export default {
         return false;
       }
     },
+    // end of ANALYZE action
 
     async ANALYZE_DELIMITERS({ state, commit }) {
       const empty = { token: '', line: null, col: null };
@@ -527,6 +535,16 @@ export default {
           commit('ADD_TO_FINAL_STREAM', current);
         }
       }
+    },
+    // end of ANALYZE_DELIMS action
+
+    async GROUP_SAME_ID({ state, commit }) {
+      for (const token of state.finalTokenStream) {
+        if (token.type === 'id') {
+          console.log(token);
+        }
+      }
     }
+    // end of GROUP_SAME_ID action
   }
 }

@@ -27,6 +27,7 @@ twoD.insert(2, [1]);
 twoD.uproot(2);
 
 @this is some comment
+@waw comment
 
 seed waw;
 waw = 12;
