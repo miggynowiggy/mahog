@@ -29,7 +29,6 @@ twoD.uproot(2);
 @this is some comment
 @waw comment
 
-seed waw;
 waw = 12;
 
 @?
@@ -40,7 +39,7 @@ comments
 
 if(isOK) {
 	carve("nice");
-} elif(isOK && num1 == 2) {
+} elif(isOK && _num == "2") {
 	carve("nice nice");
 } else {
 	carve("nice x3");

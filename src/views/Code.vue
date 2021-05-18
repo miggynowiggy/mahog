@@ -309,13 +309,13 @@ export default {
         return;
       }
 
-      await this.$store.dispatch("syntax/ANALYZE");
-      const syntaxErrors = this.$store.getters['syntax/errors'];
-      if (syntaxErrors.length) {
-        this.playLoading = false;
-        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
-        return;
-      }
+      // await this.$store.dispatch("syntax/ANALYZE");
+      // const syntaxErrors = this.$store.getters['syntax/errors'];
+      // if (syntaxErrors.length) {
+      //   this.playLoading = false;
+      //   // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+      //   return;
+      // }
 
       this.playLoading = false;
       this.displayAlert('success', 'Run success!<br />No errors found!');

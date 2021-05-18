@@ -246,6 +246,7 @@ export default {
 
         commit('SET_INITIAL_TOKENS', tokenStream);
         await dispatch('ANALYZE_DELIMITERS');
+        await dispatch('GROUP_SAME_ID');
         return true;
 
       } catch(err) {
@@ -540,8 +541,12 @@ export default {
 
     async GROUP_SAME_ID({ state, commit }) {
       for (const token of state.finalTokenStream) {
-        if (token.type === 'id') {
-          console.log(token);
+        const existingIDIndex = state.similarID.findIndex(id => token.lexeme === id);
+        if (token.token === 'id' && existingIDIndex >= 0) {
+          token.token = `id-${existingIDIndex + 1}`
+        } else if (token.token === 'id' && existingIDIndex === -1) {
+          commit('ADD_TO_SIMILAR_ID', token.lexeme);
+          token.token = `id-${state.similarID.length}`
         }
       }
     }
