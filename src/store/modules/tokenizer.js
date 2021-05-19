@@ -66,10 +66,20 @@ export default {
       const tokenStream = cloneDeep(rootGetters['lexical/lexemes']);
       for (const entry of tokenStream) {
         const symbolEntries = Object.keys(state.symbols);
-        entry.description = description[entry.token];
+
+        // Check if the token contains the keyword "id"
+        // then get the description of the "id"
+        if (entry.token.includes('id')) {
+          entry.description = description['id'];
+        } else {
+          entry.description = description[entry.token];
+        }
+
+        // Get the actual symbol if the token is a symbol
         if (symbolEntries.includes(entry.token)) {
           entry.token = state.symbols[entry.token];
         }
+
         commit('ADD_TO_STREAM', entry);
       }
     }
