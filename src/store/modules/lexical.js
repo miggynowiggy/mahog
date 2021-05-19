@@ -123,7 +123,7 @@ export default {
       ],
       dataTypes: ['NL', 'WS', 'id'],
       keywords: ['NL', 'WS', 'LParen'],
-      control: ['NL', 'WS', 'terminator'],
+      control: ['terminator'],
       unary: ['NL', 'WS', 'terminator', 'RCurl', 'RSqr', 'RParen'],
       return_word: [
         'NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit',

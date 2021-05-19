@@ -210,7 +210,7 @@ export default {
         autofocus: true,
         lineWiseCopyCut: true,
         autoCloseBrackets: {
-          pairs: `(){}[]||""''`,
+          pairs: `(){}[]||""''&&`,
           explode: "[]{}()"
         },
         matchBrackets: true,
