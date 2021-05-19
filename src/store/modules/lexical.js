@@ -114,7 +114,12 @@ export default {
       ],
       id: [
         'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'increment',
-        'decrement', 'LSqr', 'LCurl', 'LParen', 'RParen', 'RCurl', 'RSqr'
+        'decrement', 'LSqr', 'LCurl', 'LParen', 'RParen', 'RCurl', 'RSqr',
+        'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp',
+        'modoluAssignOp', 'notEqualOp', 'equalToOp', 'greaterThanEqualOp',
+        'lessThanEqualOp', 'assignOnlyOp', 'greaterThanOp', 'lessThanOp',
+        'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
+        'modoluOp', 'notOp'
       ],
       dataTypes: ['NL', 'WS', 'id'],
       keywords: ['NL', 'WS', 'LParen'],
@@ -148,7 +153,8 @@ export default {
       ],
       stringLit: [
         'NL', 'WS', 'comma', 'period', 'RSqr', 'RCurl', 'RParen',
-        'terminator', 'addOp', 'addAssignOp', 'equalToOp', 'notEqualOp'
+        'terminator', 'addOp', 'addAssignOp', 'equalToOp', 'notEqualOp',
+        'greaterThanEqualOp', 'greaterThan', 'lessThanEqualOp', 'lessThanOp'
       ],
       null: [
         'NL', 'WS', 'RSqr', 'RCurl', 'RParen', 'comma', 'terminator',
@@ -231,7 +237,6 @@ export default {
       while(token) {
         try {
           token = reader.next();
-          console.log(token);
           currentToken = token;
           // console.log(token);
           if (token) {
