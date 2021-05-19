@@ -102,7 +102,8 @@ export default {
       multiplyOp: "*",
       divideOp: "/",
       moduloOp: "%",
-      quotations: ["'", '"']
+      quotations: ["'", '"'],
+      invalid: /./
     },
 
     // Delims
@@ -226,10 +227,11 @@ export default {
       const parser = moo.compile(state.rules);
       let reader = parser.reset(code);
 
-      try {
-        let token = " ";
-        while(token) {
+      let token = true;
+      while(token) {
+        try {
           token = reader.next();
+          console.log(token);
           currentToken = token;
           // console.log(token);
           if (token) {
@@ -242,29 +244,28 @@ export default {
             });
             lineCounter = token.line
           }
+
+        } catch(err) {
+          console.log(err.message);
+          const errMessage = err.message.split('\n');
+
+          if (errMessage.length) {
+            const indexOfPointer = errMessage[3].indexOf("^");
+            const maySala = errMessage[2].charAt(indexOfPointer);
+            commit('ADD_ERROR', {
+              type: 'LEX',
+              code: 'invalid-token',
+              message: `Unexpected token -> ${maySala}`,
+              line: lineCounter
+            })
+          }
         }
-
-        commit('SET_INITIAL_TOKENS', tokenStream);
-        await dispatch('ANALYZE_DELIMITERS');
-        await dispatch('GROUP_SAME_ID');
-        return true;
-
-      } catch(err) {
-        console.log(err.message);
-        const errMessage = err.message.split('\n');
-
-        if (errMessage.length) {
-          const indexOfPointer = errMessage[3].indexOf("^");
-          const maySala = errMessage[2].charAt(indexOfPointer);
-          commit('ADD_ERROR', {
-            type: 'LEX',
-            code: 'invalid-token',
-            message: `Unexpected token -> ${maySala}`,
-            line: lineCounter
-          })
-        }
-        return false;
       }
+
+      commit('SET_INITIAL_TOKENS', tokenStream);
+      await dispatch('ANALYZE_DELIMITERS');
+      await dispatch('GROUP_SAME_ID');
+      return true;
     },
     // end of ANALYZE action
 
@@ -285,6 +286,18 @@ export default {
           if (current.token !== 'WS' && current.token !== 'NL') {
             commit('ADD_TO_FINAL_STREAM', current);
           }
+          continue;
+        }
+
+        // Handle invalid characters
+        if (current.token === 'invalid') {
+          commit('ADD_ERROR', {
+            type: 'LEX',
+            code: 'invalid-character',
+            message: `Unexpected character found -> ${current.lexeme}`,
+            line: current.line,
+            col: current.col
+          });
           continue;
         }
 
