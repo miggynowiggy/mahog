@@ -124,7 +124,7 @@ export default {
       dataTypes: ['NL', 'WS', 'id'],
       keywords: ['NL', 'WS', 'LParen'],
       control: ['terminator'],
-      unary: ['NL', 'WS', 'terminator', 'RCurl', 'RSqr', 'RParen'],
+      unary: ['NL', 'WS', 'terminator', 'comma', 'RCurl', 'RSqr', 'RParen'],
       return_word: [
         'NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit',
         'floatNumLit', 'negaNumLit', 'numLit', 'terminator'
@@ -139,7 +139,8 @@ export default {
       ],
       operators: [
         'NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit',
-        'negaNumLit', 'numLit', 'boolLit', 'stringLit', 'notOp', 'negaSign'
+        'negaNumLit', 'numLit', 'boolLit', 'stringLit', 'notOp', 'negaSign',
+        'true', 'false', 'null'
       ],
       numbers: [
         'NL', 'WS', 'comma', 'period', 'terminator', 'RSqr', 'RCurl', 'RParen',
