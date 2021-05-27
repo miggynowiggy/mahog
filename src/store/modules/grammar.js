@@ -7,7 +7,7 @@ function id(x) { return x[0]; }
   //const IndentationLexer = require("moo-indentation-lexer")
 
   const lexer = moo.compile({
-    id: "id",
+    id: /id\-[0-9]{1,9999}/,
 
     string_lit: "stringLit",
     nega_float_num_lit: "negaFloatNumLit",
