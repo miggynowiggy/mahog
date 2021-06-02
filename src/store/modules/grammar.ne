@@ -281,7 +281,7 @@ id_use
 idOnly_choices
   -> idAssign_choices
   | idFunc_call
-  | arr_methods
+  | arr_methods 
 
 idAssign_choices
   -> assign_choice
@@ -345,6 +345,7 @@ dec_content
 
 dec_content_append
   -> %comma dec_content
+  | null
 
 function_call
   -> paren_wrapper
@@ -568,11 +569,11 @@ fullId_choices
 
 call_function
   -> function_call
-  | null
+  #| null
 
 method_selection
   -> period_char period_choices
-  | null
+  #| null
 
 period_char
   -> %period
@@ -586,21 +587,24 @@ period_choices
   | null
 
 arr_choices
-  -> null
-  | arrIndex period_char period_choices
+  -> arrIndex period_char period_choices
+  #| null
 
 arrIndex
-  -> null
-  | %L_sqr whl_num_expr %R_sqr arr2D
+  -> %L_sqr whl_num_expr %R_sqr arr2D
+  #| null
 
 arr2D
   -> null
   | %L_sqr whl_num_expr %R_sqr arr2D
 
 arr_methods
-  -> %period %absorb %L_paren expressions %R_paren
-  | %period %insert_word %L_paren %num_lit %comma expressions %R_paren
-  | %period %uproot %L_paren %num_lit %R_paren
+  -> %period arr_methods_yes
+  
+arr_methods_yes
+  -> %absorb %L_paren expressions %R_paren
+  | %insert_word %L_paren %num_lit %comma expressions %R_paren
+  | %uproot %L_paren %num_lit %R_paren
 
 arr_methods_no_period
   -> %absorb %L_paren expressions %R_paren
