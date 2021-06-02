@@ -268,6 +268,13 @@ export default {
         }
       }
 
+      tokenStream.push({
+        lexeme: 'End Of File',
+        token: 'EOF',
+        line: tokenStream.length + 1,
+        col: 1
+      });
+
       commit('SET_INITIAL_TOKENS', tokenStream);
       await dispatch('ANALYZE_DELIMITERS');
       await dispatch('GROUP_SAME_ID');
@@ -292,6 +299,11 @@ export default {
           if (current.token !== 'WS' && current.token !== 'NL') {
             commit('ADD_TO_FINAL_STREAM', current);
           }
+          continue;
+        }
+
+        if (current.token === 'EOF') {
+          commit('ADD_TO_FINAL_STREAM', current);
           continue;
         }
 

@@ -89,13 +89,15 @@
     less_equal_op: "lessThanEqualOp",
 
     unary: ["increment", "decrement"],
+
+    EOF: "EOF"
   });
 %}
 
 @lexer lexer
 
 program
-  -> statement
+  -> statement %EOF
 
 statement
   -> desired_statement statement
@@ -205,7 +207,8 @@ data_nonfunction
   -> num_literals
   | %bool_lit
   | %string_lit methods_yes
-  | ids methods_yes
+  # | ids methods_yes
+  | ids
   | %L_paren dType_expr
   | size_function
   | type_casting
@@ -456,10 +459,10 @@ typecast_bol
   -> %bol_typecast %L_paren all_datatype %R_paren
 
 atChar_method
-  -> %atChar_word %L_paren all_nums %R_paren
+  -> %atChar_word %L_paren all_strings %R_paren
 
 atPos_method
-  -> %atPos_word %L_paren all_strings %R_paren
+  -> %atPos_word %L_paren all_nums %R_paren
 
 type_casting
   -> typecast_str
@@ -475,7 +478,8 @@ num_operand
   | size_function
   | typecast_num
   | array_literal
-  | ids atPos_yes
+  # | ids atPos_yes
+  | ids
   | %string_lit %period %atPos_word %L_paren str_expr %R_paren
   | %L_paren numParen_expr
 
@@ -496,7 +500,7 @@ whl_num_expr
   -> whl_num_operand additional_whl_num
 
 whl_num_operand
-  -> ids atPos_yes
+  -> ids
   | %string_lit %period %atPos_word %L_paren str_expr %R_paren
   | %num_lit
   | %L_paren whl_numParen_expr
@@ -508,7 +512,8 @@ whl_numParen_expr
   | str_expr %R_paren %period %atPos_word %L_paren str_expr %R_paren
 
 additional_whl_num
-  -> cond_operator whl_num_expr
+  -> null
+  | cond_operator whl_num_expr
 
 bool_expr
   -> bool_operand additional_bool
@@ -528,6 +533,7 @@ additional_bool
 
 bool_op
   -> relate_op_bool
+  | relate_op_num
   | %or_op
   | %and_op
 
@@ -540,7 +546,8 @@ str_expr
   | null
 
 str_operand
-  -> ids atChar_yes
+  # -> ids atChar_yes
+  -> ids
   | array_literal
   | %string_lit atChar_yes
   | %L_paren str_expr %R_paren atChar_yes
@@ -554,38 +561,51 @@ ids
   -> %id fullId_choices
 
 fullId_choices
-  -> id_choices
-  | withFunc
-
-noFunc_ids
-  -> %id id_choices
-
-id_choices
-  -> arrIndex object_yes
-  | %period obj_prop
-
-withFunc
-  -> function_call
-
-object_yes
-  -> %period obj_prop
+  -> call_function
+  | arr_choices
+  | method_selection
   | null
 
-obj_prop
-  -> %id arrIndex
+call_function
+  -> function_call
+  | null
+
+method_selection
+  -> period_char period_choices
+  | null
+
+period_char
+  -> %period
+  | null
+
+period_choices
+  -> ids
+  | atPos_method
+  | atChar_method
+  | arr_methods_no_period
+  | null
+
+arr_choices
+  -> null
+  | arrIndex period_char period_choices
 
 arrIndex
-  -> %L_sqr whl_num_expr %R_sqr arr2D
-  | null
+  -> null
+  | %L_sqr whl_num_expr %R_sqr arr2D
 
 arr2D
-  -> %L_sqr whl_num_expr %R_sqr arr2D
-  | null
+  -> null
+  | %L_sqr whl_num_expr %R_sqr arr2D
 
 arr_methods
   -> %period %absorb %L_paren expressions %R_paren
   | %period %insert_word %L_paren %num_lit %comma expressions %R_paren
   | %period %uproot %L_paren %num_lit %R_paren
+
+arr_methods_no_period
+  -> %absorb %L_paren expressions %R_paren
+  | %insert_word %L_paren %num_lit %comma expressions %R_paren
+  | %uproot %L_paren %num_lit %R_paren
 
 arith_op
   -> %add_op
@@ -602,7 +622,7 @@ return_choices
   | expression_noid
   | size_function
   | type_casting
-  | id_use
+  # | id_use
   | ids
   | literals
   | trim_function
@@ -634,7 +654,7 @@ output_choice
   | size_function
   | trim_function
   | type_casting
-  | id_use
+  # | id_use
   | ids
 
 size_function

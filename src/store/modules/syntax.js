@@ -30,7 +30,7 @@ export default {
 					currentToken = { ...token };
 					tagaParse.feed(token.token);
 					const { results } = tagaParse;
-					console.log(currentToken, token.token, results.length);
+					console.log(currentToken, results, results.length);
 				}
 
 				return true;
@@ -42,7 +42,7 @@ export default {
 					type: 'SYN',
 					code: 'syntax-error',
 					message: `
-						Unexpected token (${currentToken.lexeme}),
+						Unexpected token ( ${currentToken.lexeme} ),
 						instead was expecting ${splittedErrMessage[6].toLowerCase().replace("token based on:", "")}
 					`,
 					line: currentToken.line

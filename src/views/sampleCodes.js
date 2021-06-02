@@ -74,6 +74,10 @@ carve('hehe');
 
 string myNum = water("Enter num: ");
 
+carve(myNum.atChar('a'));
+carve(myNum.atPos(3));
+carve(myNum.atChar(myNum.atPos(2)));
+
 object miggy = {
 	string name: "Miggy",
 	number age: 21,
