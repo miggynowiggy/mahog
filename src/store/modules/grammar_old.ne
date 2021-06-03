@@ -204,7 +204,10 @@ block_scope
   -> %L_curl statement %R_curl
 
 expressions
-  -> operator operand expressions
+  -> operand expression_add
+
+expression_add
+  -> operator expressions
   | null
 
 operator
@@ -212,20 +215,19 @@ operator
   | relate_op {%id%}
   | assign_with_op {%id%}
   | logical_op {%id%}
-  | null
 
 operand
-  -> literals
+  -> literals {%id%}
   | ids {%id%}
   | type_casting {%id%}
   | trim_function {%id%}
   | size_function {%id%}
-  | %not_op
-  | %L_paren operand
-  | %R_paren
+  | not_options
+  | %L_paren
+  | operand %R_paren
 
 not_options
-  ->
+  -> %not_op operand
 
 arith_op
   -> %add_op
