@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "yarn generate-grammar && vue-cli-service serve",
+    "serve": "yarn generate-grammar-old && vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "generate-grammar": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js"
+    "generate-grammar": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js",
+    "generate-grammar-old": "nearleyc ./src/store/modules/grammar_old.ne -o ./src/store/modules/grammar.js"
   },
   "dependencies": {
     "core-js": "^3.6.5",

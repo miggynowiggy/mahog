@@ -297,6 +297,7 @@ export default {
     async runCode() {
       if (!this.code) return;
       this.playLoading = true;
+      console.clear();
       this.clearState();
 
       const lexerSuccess = await this.$store.dispatch("lexical/ANALYZE", this.code);

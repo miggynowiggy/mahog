@@ -136,7 +136,7 @@ data_declare
 data_id
   -> %number_datatype %id
   | %string_datatype %id
-  | %boolean %id
+  | %boolean_datatype %id
 
 seed_dec
   -> %seed %id data_choices
@@ -281,7 +281,7 @@ id_use
 idOnly_choices
   -> idAssign_choices
   | idFunc_call
-  | arr_methods 
+  | arr_methods
 
 idAssign_choices
   -> assign_choice
@@ -555,8 +555,8 @@ str_operand
   | %str_typecast %L_paren num_expr %R_paren atChar_yes
 
 additional_str
-  -> null
-  | str_op str_expr
+  -> str_op str_expr
+  | null
 
 ids
   -> %id fullId_choices
@@ -600,7 +600,7 @@ arr2D
 
 arr_methods
   -> %period arr_methods_yes
-  
+
 arr_methods_yes
   -> %absorb %L_paren expressions %R_paren
   | %insert_word %L_paren %num_lit %comma expressions %R_paren

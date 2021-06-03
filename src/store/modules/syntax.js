@@ -41,10 +41,11 @@ export default {
 				commit('ADD_ERROR', {
 					type: 'SYN',
 					code: 'syntax-error',
-					message: `
-						Unexpected token ( ${currentToken.lexeme} ),
-						instead was expecting ${splittedErrMessage[6].toLowerCase().replace("token based on:", "")}
-					`,
+					// message: `
+					// 	Unexpected token ${currentToken.lexeme} ,
+					// 	instead was expecting ${splittedErrMessage[6].toLowerCase().replace("token based on:", "")}
+					// `,
+					message: `Unexpected token -> ${currentToken.lexeme}`,
 					line: currentToken.line
 				})
 				return false;
