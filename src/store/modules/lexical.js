@@ -126,7 +126,7 @@ export default {
       control: ['terminator'],
       unary: ['NL', 'WS', 'terminator', 'comma', 'RCurl', 'RSqr', 'RParen'],
       return_word: [
-        'NL', 'WS', 'id', 'LParen', 'boolLit', 'stringLit', 'negaFloatNumLit',
+        'NL', 'WS', 'id', 'LParen', 'true', 'false', 'stringLit', 'negaFloatNumLit',
         'floatNumLit', 'negaNumLit', 'numLit', 'terminator'
       ],
       else: ['NL', 'WS', 'LCurl'],
@@ -134,12 +134,12 @@ export default {
         'NL', 'WS', 'id', 'absorb', 'insert', 'uproot', 'atChar', 'atPos'
       ],
       notOp: [
-        'NL', 'WS', 'id', 'LParen', 'boolLit', 'notOp', 'negaFloatNumLit',
+        'NL', 'WS', 'id', 'LParen', 'true', 'false', 'notOp', 'negaFloatNumLit',
         'floatNumLit', 'negaNumLit', 'numLit', 'stringLit'
       ],
       operators: [
         'NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit',
-        'negaNumLit', 'numLit', 'boolLit', 'stringLit', 'notOp', 'negaSign',
+        'negaNumLit', 'numLit', 'true', 'false', 'stringLit', 'notOp', 'negaSign',
         'true', 'false', 'null'
       ],
       numbers: [

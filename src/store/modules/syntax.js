@@ -23,7 +23,7 @@ export default {
 		async ANALYZE({ commit, rootGetters }) {
 			const tagaParse = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
-			const tokenStreamCopy = cloneDeep(rootGetters['lexical/lexemes']);
+			const tokenStreamCopy = cloneDeep(rootGetters['lexical/lexemes']).filter(token => token.token !== 'comment' && token.token !== "multilineComment");
 			let currentToken;
 			try {
 				for (const token of tokenStreamCopy) {

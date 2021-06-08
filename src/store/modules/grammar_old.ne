@@ -120,8 +120,13 @@ desired_statement
   | return_statement {%id%}
 
 id_assign
-  -> ids %terminator
-  | ids assign_op assignable_values %terminator
+  -> ids id_yes
+  # -> ids %terminator
+  # | ids assign_op assignable_values %terminator
+
+id_yes
+  -> %terminator
+  | assign_op assignable_values %terminator
 
 assignable_values
   -> input_statement
@@ -223,8 +228,9 @@ operand
   | trim_function {%id%}
   | size_function {%id%}
   | %not_op operand
-  | %L_paren operand
-  | %R_paren
+  | %L_paren expressions %R_paren 
+  #| %L_paren operand
+  #| %R_paren 
 
 arith_op
   -> %add_op
@@ -268,7 +274,7 @@ logical_op
 
 literals
   -> number_literals {%id%}
-  | %string_lit period_char str_methods
+  | %string_lit additional_str_method
   | %bool_lit
 
 number_literals
@@ -286,11 +292,11 @@ float_numbers
 str_methods
   -> atPos_method
   | atChar_method
-  | null
+  #| null
 
-period_char
-  -> %period
-  | null
+# period_char
+#   -> %period
+#   | null
 
 atPos_method
   -> %atPos_word %L_paren expressions %R_paren
@@ -299,11 +305,17 @@ atChar_method
   -> %atChar_word %L_paren expressions %R_paren
 
 ids
-  -> %id unary array_access period_char object_access arr_methods str_methods call_function
+  -> %id unary array_access object_access call_function
+  #-> %id unary array_access object_access arr_methods str_methods call_function
 
 object_access
-  -> ids
+  -> %period object_yes
   | null
+
+object_yes
+  -> %id array_access
+  | str_methods
+  | arr_methods
 
 unary
   -> %unary
@@ -326,18 +338,23 @@ array_literal
 
 array_contents
   -> expressions append_element
-  | %L_sqr array_contents %R_sqr append_element
+  | %L_sqr expressions append_element_2d_yes %R_sqr append_element
+  #| %L_sqr array_contents %R_sqr append_element
   | null
 
 append_element
   -> %comma array_contents
   | null
 
+append_element_2d_yes
+  -> %comma expressions append_element_2d_yes
+  | null
+
 arr_methods
   -> %absorb %L_paren array_contents %R_paren
   | %insert_word %L_paren %num_lit %comma array_contents %R_paren
   | %uproot %L_paren expressions %R_paren
-  | null
+  #| null
 
 typecast_str
   -> %str_typecast %L_paren expressions %R_paren
@@ -365,7 +382,11 @@ input_statement
 
 input_choices
   -> ids
-  | %string_lit period_char str_methods
+  | %string_lit additional_str_method
+
+additional_str_method
+  -> %period str_methods
+  | null
 
 output_statement
   -> %carve %L_paren expressions %R_paren %terminator
@@ -382,7 +403,7 @@ if_statement
   -> %if_word %L_paren expressions %R_paren block_scope elif_statement else_statement
 
 elif_statement
-  -> %elif %L_paren expressions %R_paren block_scope else_statement
+  -> %elif %L_paren expressions %R_paren block_scope #else_statement
   | null
 
 else_statement

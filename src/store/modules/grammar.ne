@@ -572,12 +572,12 @@ call_function
   #| null
 
 method_selection
-  -> period_char period_choices
-  #| null
-
-period_char
-  -> %period
+  -> %period period_choices
   | null
+
+#period_char
+  #-> %period
+  #| null
 
 period_choices
   -> ids
@@ -587,7 +587,7 @@ period_choices
   | null
 
 arr_choices
-  -> arrIndex period_char period_choices
+  -> arrIndex method_selection
   #| null
 
 arrIndex
