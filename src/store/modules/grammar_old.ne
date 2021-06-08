@@ -305,7 +305,7 @@ atChar_method
   -> %atChar_word %L_paren expressions %R_paren
 
 ids
-  -> %id unary array_access object_access call_function
+  -> %id array_access unary call_function object_access 
   #-> %id unary array_access object_access arr_methods str_methods call_function
 
 object_access
@@ -313,7 +313,8 @@ object_access
   | null
 
 object_yes
-  -> %id array_access
+  -> %id array_access unary
+  #-> %id array_access
   | str_methods
   | arr_methods
 
