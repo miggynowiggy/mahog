@@ -222,12 +222,9 @@ operand
   | type_casting {%id%}
   | trim_function {%id%}
   | size_function {%id%}
-  | not_options
-  | %L_paren
-  | operand %R_paren
-
-not_options
-  -> %not_op operand
+  | %not_op operand
+  | %L_paren operand
+  | %R_paren
 
 arith_op
   -> %add_op
