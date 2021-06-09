@@ -228,6 +228,7 @@ export default {
     async ANALYZE({ state, dispatch, commit }, code) {
       commit('CLEAR_TOKENS');
       let lineCounter;
+      let columnCounter;
       let currentToken;
 
       const tokenStream = [];
@@ -249,6 +250,7 @@ export default {
               col: token.col
             });
             lineCounter = token.line
+            columnCounter = token.col
           }
 
         } catch(err) {
@@ -262,7 +264,8 @@ export default {
               type: 'LEX',
               code: 'invalid-token',
               message: `Unexpected token -> ${maySala}`,
-              line: lineCounter
+              line: lineCounter,
+              col: columnCounter
             })
           }
         }

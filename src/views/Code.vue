@@ -256,6 +256,7 @@ export default {
         { text: "Code", align: "left", sortable: "false", value: "code" },
         { text: "Message", align: "center", sortable: "false", value: "message" },
         { text: "Line", align: "center", sortable: "false", value: "line" },
+        { text: "Col", align: "center", sortable: "false", value: "col" },
       ],
       alertType: '',
       alertMessage: '',

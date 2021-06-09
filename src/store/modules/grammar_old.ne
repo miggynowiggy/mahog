@@ -135,6 +135,9 @@ assignable_values
   | size_function
   | trim_function
   | array_literal
+  | arith_expressions
+  | str_expressions
+  | bool_expressions
 
 data_declare
   -> data_id data_choices
@@ -218,16 +221,17 @@ arith_expr_add
 
 arith_operand
   -> number_literals {%id%}
-  | ids {%id%}
+  #| ids {%id%}
   | typecast_num
   | trim_function {%id%}
   | size_function {%id%}
-  | %not_op arith_operand
-  | %L_paren arith_expressions %R_paren
+  #| %not_op arith_operand
+  #| %L_paren arith_expressions %R_paren
 
 arith_operator
   -> arith_op {%id%}
   | assign_with_op {%id%}
+  | relate_op {%id%}
 
 # Boolean Expression
 bool_expressions
@@ -238,13 +242,13 @@ bool_expr_add
   | null
 
 bool_operand
-  -> literals {%id%}
-  | ids {%id%}
-  | typecast_num
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op bool_operand
-  | %L_paren bool_expressions %R_paren
+  -> %bool_lit
+  #| ids {%id%}
+  | typecast_bol
+  #| trim_function {%id%}
+  #| size_function {%id%}
+  | %not_op expressions
+  #| %L_paren bool_expressions %R_paren
 
 bool_operator
   -> relate_op {%id%}
@@ -260,24 +264,25 @@ str_expr_add
 
 str_operand
   -> %string_lit additional_str_method
-  | ids {%id%}
-  | typecast_num
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op str_operand
-  | %L_paren str_expressions %R_paren
+  #| ids {%id%}
+  | typecast_str
+  #| trim_function {%id%}
+  #| size_function {%id%}
+  #| %not_op str_operand
+  #| %L_paren str_expressions %R_paren
 
 str_operator
   -> %add_op
   | %add_assign_op
+  | relate_op {%id%}
 
 # General Expressions
-expressions
-  -> operand expression_add
+# expressions
+#   -> operand expression_add
 
-expression_add
-  -> operator expressions
-  | null
+# expression_add
+#   -> operator expressions
+#   | null
 
 operator
   -> arith_op {%id%}
@@ -285,16 +290,65 @@ operator
   | assign_with_op {%id%}
   | logical_op {%id%}
 
-operand
-  -> literals {%id%}
-  | ids {%id%}
-  | type_casting {%id%}
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op operand
-  | %L_paren expressions %R_paren
-  #| %L_paren operand
-  #| %R_paren
+# operand
+#   -> literals {%id%}
+#   | ids {%id%}
+#   | type_casting {%id%}
+#   | trim_function {%id%}
+#   | size_function {%id%}
+#   | %not_op operand
+#   | %L_paren expressions %R_paren
+#   #| %L_paren operand
+#   #| %R_paren
+
+expressions
+# -> arith_expressions
+# | bool_expressions
+# | str_expressions
+-> ids id_expr_add
+| %L_paren paren_expressions
+
+paren_expressions
+-> arith_expressions %R_paren arith_expr_add_paren
+| str_expressions %R_paren str_expr_add_paren
+| bool_expressions %R_paren bool_expr_add_paren
+| ids id_expr_add %R_paren id_expr_add_paren
+
+arith_expr_add_paren
+-> arith_operator arith_expr_add_paren_yes
+| null
+
+arith_expr_add_paren_yes
+-> arith_expressions
+| %L_paren arith_expressions %R_paren
+
+str_expr_add_paren
+-> str_operator str_expr_add_paren_yes
+| null
+
+str_expr_add_paren_yes
+-> str_expressions
+| %L_paren str_expressions %R_paren
+
+bool_expr_add_paren
+-> bool_operator bool_expr_add_paren_yes
+| null
+
+bool_expr_add_paren_yes
+-> bool_expressions
+| %L_paren bool_expressions %R_paren
+
+id_expr_add
+-> operator array_values
+| null
+
+id_expr_add_paren
+-> ids id_expr_add_paren_yes
+| null
+
+id_expr_add_paren_yes
+-> expressions
+| %L_paren expressions %R_paren
 
 arith_op
   -> %add_op
@@ -402,17 +456,23 @@ array_literal
   -> %L_sqr array_contents %R_sqr
 
 array_contents
-  -> expressions append_element
-  | %L_sqr expressions append_element_2d_yes %R_sqr append_element
+  -> array_values append_element
+  | %L_sqr array_values append_element_2d_yes %R_sqr append_element
   #| %L_sqr array_contents %R_sqr append_element
   | null
+
+array_values
+  -> arith_expressions {%id%}
+  | str_expressions {%id%}
+  | bool_expressions {%id%}
+  | expressions {%id%}
 
 append_element
   -> %comma array_contents
   | null
 
 append_element_2d_yes
-  -> %comma expressions append_element_2d_yes
+  -> %comma array_values append_element_2d_yes
   | null
 
 arr_methods
@@ -455,7 +515,7 @@ additional_str_method
   | null
 
 output_statement
-  -> %carve %L_paren expressions %R_paren %terminator
+  -> %carve %L_paren array_values %R_paren %terminator
 
 size_function
   -> %size %L_paren size_function_choices %R_paren
@@ -467,10 +527,12 @@ size_function_choices
   | ids
 
 if_statement
-  -> %if_word %L_paren bool_expressions %R_paren block_scope elif_statement else_statement
+  -> %if_word %L_paren array_values %R_paren block_scope elif_statement else_statement
+  # -> %if_word %L_paren bool_expressions %R_paren block_scope elif_statement else_statement
 
 elif_statement
-  -> %elif %L_paren bool_expressions %R_paren block_scope #else_statement
+  -> %elif %L_paren array_values %R_paren block_scope
+  #-> %elif %L_paren bool_expressions %R_paren block_scope #else_statement
   | null
 
 else_statement
@@ -478,19 +540,21 @@ else_statement
   | null
 
 loop_statement
-  -> %during %L_paren bool_expressions %R_paren block_scope
+  -> %during %L_paren array_values %R_paren block_scope
+  #-> %during %L_paren bool_expressions %R_paren block_scope
   | %cycle %L_paren cycle_condition %R_paren block_scope
 
 cycle_condition
   -> init_loop %terminator cond_loop %terminator paren_unary
 
 init_loop
-  -> %number_datatype %id %assign_only_op expressions
-  | %id %assign_only_op expressions
+  -> %number_datatype %id %assign_only_op array_values
+  | %id %assign_only_op array_values
   | null
 
 cond_loop
   -> bool_expressions
+  | expressions
   | null
 
 paren_unary
