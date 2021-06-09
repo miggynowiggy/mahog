@@ -39,7 +39,7 @@ comments
 
 if(isOK) {
 	carve("nice");
-} elif(isOK && _num == "2") {
+} elif(isOK && (_num == "2")) {
 	carve("nice nice");
 } else {
 	carve("nice x3");
