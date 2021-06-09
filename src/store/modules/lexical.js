@@ -140,7 +140,7 @@ export default {
       operators: [
         'NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit',
         'negaNumLit', 'numLit', 'true', 'false', 'stringLit', 'notOp', 'negaSign',
-        'true', 'false', 'null'
+        'true', 'false', 'null', 'trim', 'size', 'num', 'str', 'bol'  
       ],
       numbers: [
         'NL', 'WS', 'comma', 'period', 'terminator', 'RSqr', 'RCurl', 'RParen',
