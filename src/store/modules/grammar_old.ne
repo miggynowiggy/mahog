@@ -131,9 +131,9 @@ id_yes
 assignable_values
   -> input_statement
   | expressions
-  | type_casting
-  | size_function
-  | trim_function
+  # | type_casting
+  # | size_function
+  # | trim_function
   | array_literal
   | arith_expressions
   | str_expressions
@@ -238,7 +238,7 @@ bool_expressions
   -> bool_operand bool_expr_add
 
 bool_expr_add
-  -> bool_operator bool_expressions
+  -> bool_operator if_loop_expressions
   | null
 
 bool_operand
@@ -417,10 +417,10 @@ str_methods
 #   | null
 
 atPos_method
-  -> %atPos_word %L_paren expressions %R_paren
+  -> %atPos_word %L_paren init_expressions %R_paren
 
 atChar_method
-  -> %atChar_word %L_paren expressions %R_paren
+  -> %atChar_word %L_paren atChar_expressions %R_paren
 
 ids
   -> %id array_access unary call_function object_access
