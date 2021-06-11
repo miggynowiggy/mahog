@@ -146,7 +146,7 @@
 </template>
 
 <script>
-import { code2 } from './sampleCodes';
+import { code3 } from './sampleCodes';
 import { codemirror, CodeMirror } from 'vue-codemirror';
 
 require("codemirror/addon/mode/simple.js");
@@ -200,7 +200,7 @@ export default {
   data() {
     const self = this;
     return {
-      code: code2,
+      code: code3,
       cmOptions: {
         tabSize: 2,
         theme: "mbo",

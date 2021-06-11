@@ -1,4 +1,6 @@
 const tokens = {
+  id: "id",
+
   string_lit: "string literal",
   nega_float_num_lit: "number literal",
   float_num_lit: "number literal",

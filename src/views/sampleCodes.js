@@ -85,3 +85,19 @@ object miggy = {
 	string subjs: ["CS", "IT", "MIS"],
 };
 `;
+
+export const code3 = `
+number grades = [89 + 1, 90, 91, 92, 79, id];
+
+if (grades[0] >= 90) {
+  carve("nice grades!");
+} elif (grades[0] <= 85) {
+  carve("still nice though...");
+} else {
+  number N = size(grades);
+  number index = 0;
+  during(index < N) {
+    carve("GRADE " + (index + 1) + ": " + grades[index]);
+  }
+}
+`;

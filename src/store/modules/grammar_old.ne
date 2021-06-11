@@ -113,7 +113,7 @@ desired_statement
   | if_statement {%id%}
   | loop_statement {%id%}
   | control {%id%}
-  | comments {%id%}
+  # | comments {%id%}
   | trim_function %terminator
   | type_casting %terminator
   | size_function %terminator
@@ -250,25 +250,25 @@ arith_operator
   | relate_op {%id%}
 
 # Boolean Expression
-bool_expressions
-  -> bool_operand bool_expr_add
+# bool_expressions
+#   -> bool_operand bool_expr_add
 
-bool_expr_add
-  -> bool_operator if_loop_expressions
-  | null
+# bool_expr_add
+#   -> bool_operator if_loop_expressions
+#   | null
 
-bool_operand
-  -> %bool_lit 
-  #| ids {%id%}
-  | typecast_bol
-  #| trim_function {%id%}
-  #| size_function {%id%}
-  #| %not_op if_loop_expressions
-  #| %L_paren bool_expressions %R_paren
+# bool_operand
+#   -> %bool_lit
+#   #| ids {%id%}
+#   | typecast_bol
+#   #| trim_function {%id%}
+#   #| size_function {%id%}
+#   #| %not_op if_loop_expressions
+#   #| %L_paren bool_expressions %R_paren
 
-bool_operator
-  -> relate_op {%id%}
-  | logical_op {%id%}
+# bool_operator
+#   -> relate_op {%id%}
+#   | logical_op {%id%}
 
 # String Expressions
 str_expressions
@@ -317,7 +317,7 @@ operator
 #   #| %L_paren operand
 #   #| %R_paren
 
-expressions 
+expressions
 # -> arith_expressions
 # | bool_expressions
 # | str_expressions
@@ -341,19 +341,19 @@ expressions_with_lit
 #   | %not_op expressions
 #   | %L_paren expressions %R_paren
 
-if_loop_expressions #for bool
--> if_loop_operands bool_expr_add
-| %not_op if_loop_operands bool_expr_add
+# if_loop_expressions #for bool
+# -> if_loop_operands bool_expr_add
+# | %not_op if_loop_operands bool_expr_add
 # -> bool_expressions bool_expr_add
 # | ids bool_expr_add
 # | %L_paren if_loop_paren_yes
 
-if_loop_operands
--> bool_expressions {%id%}
-| str_expressions {%id%}
-| arith_expressions {%id%}
-| ids {%id%}
-| %L_paren if_loop_expressions %R_paren
+# if_loop_operands
+# -> bool_expressions {%id%}
+# | str_expressions {%id%}
+# | arith_expressions {%id%}
+# | ids {%id%}
+# | %L_paren if_loop_expressions %R_paren
 # if_loop_paren_yes
 # -> paren_expressions {%id%}
 # | if_loop_paren_choices
@@ -365,6 +365,9 @@ if_loop_operands
 # if_loop_paren_choices
 # -> bool_expressions %R_paren bool_expr_add_paren
 # | ids id_expr_add %R_paren id_expr_add_paren
+
+# if_loop_expressions_add
+#   -> mixed_expressions
 
 init_expressions # for num
 -> init_operands init_expr_add
@@ -417,13 +420,13 @@ str_expr_add_paren_yes
 -> str_expressions
 | %L_paren str_expressions %R_paren
 
-bool_expr_add_paren
--> bool_operator bool_expr_add_paren_yes
-| null
+# bool_expr_add_paren
+# -> bool_operator bool_expr_add_paren_yes
+# | null
 
-bool_expr_add_paren_yes
--> bool_expressions
-| %L_paren bool_expressions %R_paren
+# bool_expr_add_paren_yes
+# -> bool_expressions
+# | %L_paren bool_expressions %R_paren
 
 arith_op
   -> %add_op
@@ -571,7 +574,7 @@ type_casting
   | typecast_bol
 
 trim_function
-  -> %trim %L_paren trim_param %comma arith_expressions %R_paren 
+  -> %trim %L_paren trim_param %comma arith_expressions %R_paren
 
 trim_param
   -> float_numbers
@@ -602,11 +605,13 @@ size_function_choices
   | ids
 
 if_statement
-  -> %if_word %L_paren if_loop_expressions %R_paren block_scope elif_statement else_statement
+  -> %if_word %L_paren mixed_expressions %R_paren block_scope elif_statement else_statement
+  #| %if_word %L_paren if_loop_expressions %R_paren block_scope elif_statement else_statement
   # -> %if_word %L_paren bool_expressions %R_paren block_scope elif_statement else_statement
 
 elif_statement
-  -> %elif %L_paren if_loop_expressions %R_paren block_scope
+  -> %elif %L_paren mixed_expressions %R_paren block_scope
+  # | %elif %L_paren if_loop_expressions %R_paren block_scope
   #-> %elif %L_paren bool_expressions %R_paren block_scope #else_statement
   | null
 
@@ -615,7 +620,8 @@ else_statement
   | null
 
 loop_statement
-  -> %during %L_paren if_loop_expressions %R_paren block_scope
+  -> %during %L_paren mixed_expressions %R_paren block_scope
+  # | %during %L_paren if_loop_expressions %R_paren block_scope
   #-> %during %L_paren bool_expressions %R_paren block_scope
   | %cycle %L_paren cycle_condition %R_paren block_scope
 
@@ -628,7 +634,8 @@ init_loop
   | null
 
 cond_loop
-  -> if_loop_expressions
+  -> mixed_expressions
+  #| if_loop_expressions
   #| expressions
   | null
 
@@ -637,11 +644,11 @@ paren_unary
 
 paren_unary_yes
 -> %unary
-| assign_op init_operands 
+| assign_op init_operands
 
-comments
-  -> %comment
-  | %multiline
+# comments
+#   -> %comment
+#   | %multiline
 
 control
   -> %skip_word %terminator
