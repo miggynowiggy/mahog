@@ -70,11 +70,6 @@ export default {
 					}
 				}
 
-				// just remove the last "or" string in case that it exists at the end of the expectedToken string
-				if (expectedTokens.lastIndexOf("or") >= 0) {
-					expectedTokens = expectedTokens.substring(0, expectedTokens.length - 4);
-				}
-
 				commit('ADD_ERROR', {
 					type: 'SYN',
 					code: 'syntax-error',
