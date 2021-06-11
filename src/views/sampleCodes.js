@@ -91,7 +91,7 @@ number grades = [89 + 1, 90, 91, 92, 79, id];
 
 if (grades[0] >= 90) {
   carve("nice grades!");
-} elif (grades[0] <= 85) {
+} elif ((grades[0] >= 80) && (grades[0] <= 89)) {
   carve("still nice though...");
 } else {
   number N = size(grades);

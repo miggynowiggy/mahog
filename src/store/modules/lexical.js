@@ -10,7 +10,7 @@ export default {
     // rules to find the keywords and reserved symbol of the language
     rules: {
       id: {
-        match: /[_a-zA-Z][a-zA-Z0-9]{0,20}/,
+        match: /[_a-zA-Z][_a-zA-Z0-9]{0,20}/,
         type: moo.keywords({
           "seed": "seed",
           "number": "number",
@@ -140,7 +140,7 @@ export default {
       operators: [
         'NL', 'WS', 'LParen', 'id', 'negaFloatNumLit', 'floatNumLit',
         'negaNumLit', 'numLit', 'true', 'false', 'stringLit', 'notOp', 'negaSign',
-        'true', 'false', 'null', 'trim', 'size', 'num', 'str', 'bol'  
+        'true', 'false', 'null', 'trim', 'size', 'num', 'str', 'bol'
       ],
       numbers: [
         'NL', 'WS', 'comma', 'period', 'terminator', 'RSqr', 'RCurl', 'RParen',
