@@ -501,7 +501,7 @@ atChar_method
   -> %atChar_word %L_paren atChar_expressions %R_paren
 
 ids
-  -> %id array_access unary call_function object_access
+  -> %id array_access call_function object_access unary
   #-> %id unary array_access object_access arr_methods str_methods call_function
 
 object_access

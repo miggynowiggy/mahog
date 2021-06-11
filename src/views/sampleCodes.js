@@ -100,4 +100,7 @@ if (grades[0] >= 90) {
     carve("GRADE " + (index + 1) + ": " + grades[index]);
   }
 }
+
+waw = (a + b + c + d);
+id = id[21][0].id[2]-- + id.po[2]++ + id.po + ig++;
 `;

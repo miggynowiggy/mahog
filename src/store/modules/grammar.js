@@ -248,7 +248,7 @@ var grammar = {
     {"name": "str_methods", "symbols": ["atChar_method"]},
     {"name": "atPos_method", "symbols": [(lexer.has("atPos_word") ? {type: "atPos_word"} : atPos_word), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "init_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren)]},
     {"name": "atChar_method", "symbols": [(lexer.has("atChar_word") ? {type: "atChar_word"} : atChar_word), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "atChar_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren)]},
-    {"name": "ids", "symbols": [(lexer.has("id") ? {type: "id"} : id), "array_access", "unary", "call_function", "object_access"]},
+    {"name": "ids", "symbols": [(lexer.has("id") ? {type: "id"} : id), "array_access", "call_function", "object_access", "unary"]},
     {"name": "object_access", "symbols": [(lexer.has("period") ? {type: "period"} : period), "object_yes"]},
     {"name": "object_access", "symbols": []},
     {"name": "object_yes", "symbols": [(lexer.has("id") ? {type: "id"} : id), "array_access", "unary"]},
