@@ -501,30 +501,53 @@ atChar_method
   -> %atChar_word %L_paren atChar_expressions %R_paren
 
 ids
-  -> %id array_access call_function object_access unary
+  -> %id id_choices
+  # -> %id array_access call_function object_access unary
   #-> %id unary array_access object_access arr_methods str_methods call_function
+
+#new production
+id_choices
+  -> array_access object_null unary_null
+  | call_function
+  | object_access unary_null
+  | unary
+  | null
+
 
 object_access
   -> %period object_yes
-  | null
+  #| null
 
 object_yes
-  -> %id array_access unary
+  -> %id object_arr
+  # -> %id array_access unary
   #-> %id array_access
   | str_methods
   | arr_methods
 
+object_arr 
+  -> array_access
+  | null
+
+object_null
+  -> object_access
+  | null
+
 unary
+  -> %unary
+  #| null
+
+unary_null
   -> %unary
   | null
 
 call_function
   -> function_call
-  | null
+  #| null
 
 array_access
   -> %L_sqr mixed_expressions %R_sqr arr_2D
-  | null
+  #| null
 
 arr_2D
   -> %L_sqr mixed_expressions %R_sqr
