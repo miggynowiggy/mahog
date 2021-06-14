@@ -10,7 +10,7 @@ export default {
     // rules to find the keywords and reserved symbol of the language
     rules: {
       id: {
-        match: /[_a-zA-Z][_a-zA-Z0-9]{0,20}/,
+        match: /[_a-zA-Z][_a-zA-Z0-9]{0,53}/,
         type: moo.keywords({
           "seed": "seed",
           "number": "number",
@@ -48,10 +48,10 @@ export default {
       NL: {match: /\n|\r\n|\r/, lineBreaks: true},
       WS: /[ \t]+/,
 
-      negaFloatNumLit: /[~][0-9]{0,9}[\.][0-9]{1,9}/,
-      floatNumLit: /[0-9]{0,9}[\.][0-9]{1,9}/,
-      negaNumLit: /[~][0-9]{1,9}/,
-      numLit: /[0-9]{1,9}/,
+      negaFloatNumLit: /[~][0-9]{0,10}[\.][0-9]{1,9}/,
+      floatNumLit: /[0-9]{0,10}[\.][0-9]{1,9}/,
+      negaNumLit: /[~][0-9]{1,10}/,
+      numLit: /[0-9]{1,10}/,
 
       stringLit: [
         // {match: /"""[^]*?"""/, lineBreaks: true, value: x => x.slice(3, -3)},
@@ -262,8 +262,8 @@ export default {
             const maySala = errMessage[2].charAt(indexOfPointer);
             commit('ADD_ERROR', {
               type: 'LEX',
-              code: 'invalid-token',
-              message: `Unexpected token -> ${maySala}`,
+              code: 'invalid-character',
+              message: `Unexpected character -> ${maySala}`,
               line: lineCounter,
               col: columnCounter
             })

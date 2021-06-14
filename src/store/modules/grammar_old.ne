@@ -97,10 +97,12 @@
 @lexer lexer
 
 program
-  -> statement %EOF
+  -> statement
+  #| statement %EOF
 
 statement
   -> desired_statement statement
+  | %EOF
   | null
 
 desired_statement
@@ -148,7 +150,8 @@ mixed_operands
   | type_casting {%id%}
   | trim_function {%id%}
   | size_function {%id%}
-  | %not_op mixed_expressions
+  | %not_op mixed_operands
+  #| %not_op mixed_expressions
   | %L_paren mixed_expressions %R_paren
 
 mixed_adds
@@ -525,7 +528,7 @@ object_yes
   | str_methods
   | arr_methods
 
-object_arr 
+object_arr
   -> array_access
   | null
 

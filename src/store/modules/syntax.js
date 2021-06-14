@@ -31,9 +31,10 @@ export default {
 				for (const token of tokenStreamCopy) {
 					currentToken = { ...token };
 					tagaParse.feed(token.token);
-					const { results } = tagaParse;
-					console.log(currentToken, results, results.length);
 				}
+
+				const { results } = tagaParse;
+				console.log(results, results.length);
 
 				return true;
 
@@ -44,10 +45,10 @@ export default {
 				const splittedErrMessage = err.message.split("\n");
 
 				// only get the lines that start with the word "A"
-				// since it will contain which token are expected instead of the errouneous token
+				// since that line will contain the tokens to be expected instead of the errouneous token
 				const linesWithExpectedTokens = splittedErrMessage.filter(line => line.includes("A "));
 
-				// identify the real name of the expected tokens
+				// convert expected token into user-readable format
 				let expectedTokens = '';
 				const expectedTokensLength = linesWithExpectedTokens.length;
 				for (let index = 0; index < expectedTokensLength; index++) {

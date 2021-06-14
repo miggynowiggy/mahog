@@ -97,10 +97,8 @@ if (grades[0] >= 90) {
   number N = size(grades);
   number index = 0;
   during(index < N) {
-    carve("GRADE " + (index + 1) + ": " + grades[index]);
+    carve("GRADE " + str(index + 1) + ": " + grades[index]);
+    index++;
   }
 }
-
-waw = (a + b + c + d);
-id = id[21][0].id[2]-- + id.po[2]++ + id.po + ig++;
 `;

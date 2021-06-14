@@ -99,8 +99,9 @@ function id(x) { return x[0]; }
 var grammar = {
     Lexer: lexer,
     ParserRules: [
-    {"name": "program", "symbols": ["statement", (lexer.has("EOF") ? {type: "EOF"} : EOF)]},
+    {"name": "program", "symbols": ["statement"]},
     {"name": "statement", "symbols": ["desired_statement", "statement"]},
+    {"name": "statement", "symbols": [(lexer.has("EOF") ? {type: "EOF"} : EOF)]},
     {"name": "statement", "symbols": []},
     {"name": "desired_statement", "symbols": ["data_declare"], "postprocess": id},
     {"name": "desired_statement", "symbols": ["const_declare"], "postprocess": id},
@@ -127,7 +128,7 @@ var grammar = {
     {"name": "mixed_operands", "symbols": ["type_casting"], "postprocess": id},
     {"name": "mixed_operands", "symbols": ["trim_function"], "postprocess": id},
     {"name": "mixed_operands", "symbols": ["size_function"], "postprocess": id},
-    {"name": "mixed_operands", "symbols": [(lexer.has("not_op") ? {type: "not_op"} : not_op), "mixed_expressions"]},
+    {"name": "mixed_operands", "symbols": [(lexer.has("not_op") ? {type: "not_op"} : not_op), "mixed_operands"]},
     {"name": "mixed_operands", "symbols": [(lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "mixed_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren)]},
     {"name": "mixed_adds", "symbols": ["operator", "mixed_expressions"]},
     {"name": "mixed_adds", "symbols": []},
