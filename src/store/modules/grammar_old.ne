@@ -129,28 +129,21 @@ id_assign
 id_yes
   -> %terminator
   | assign_op assignable_values %terminator
-  | operator_no_assign mixed_expressions %terminator
-  | unary %terminator
 
 assignable_values
-  -> assign_val
-  #-> input_statement
+  -> input_statement
   | mixed_expressions
   # | type_casting
   # | size_function
   # | trim_function
-  #| array_literal
+  | array_literal
   # | arith_expressions
   # | str_expressions
   # | bool_expressions
 
-assign_val
-  -> input_statement
-  | array_literal
-
 mixed_expressions
   -> number_literals init_expr_add
-  | %string_lit additional_str_method_expr 
+  | %string_lit additional_str_method_expr
   | %bool_lit init_expr_add
   | ids mixed_adds
   | typecast_num init_expr_add
@@ -178,76 +171,25 @@ atChar_method_yes
   -> %period atChar_method
   | null
 
-# paren_expr 
+# paren_expr
 #   -> mixed_operands paren_adds
 
-# mixed_operands
-#   -> literals {%id%}
-#   | ids {%id%}
-#   | type_casting {%id%}
-#   | trim_function {%id%}
-#   | size_function {%id%}
-#   | %not_op mixed_operands
-#   #| %not_op mixed_expressions
-#   | %L_paren mixed_expressions %R_paren
+mixed_operands
+-> literals {%id%}
+  | ids {%id%}
+  | type_casting {%id%}
+  | trim_function {%id%}
+  | size_function {%id%}
+  | %not_op mixed_operands
+  #| %not_op mixed_expressions
+  | %L_paren mixed_expressions %R_paren
 
 mixed_adds
-  -> %add_op mixed_expressions
-  | %subtract_op mixed_expressions
-  | %multiply_op mixed_expressions
-  | %divide_op mixed_expressions
-  | %modulo_op mixed_expressions
-  | relate_op mixed_expressions
-  #| assign_with_op {%id%}
-  | logical_op mixed_expressions
-  | null
-  # -> %add_op add_choices
-  # | %subtract_op init_expressions
-  # | %multiply_op init_expressions
-  # | %divide_op init_expressions
-  # | %modulo_op init_expressions
-  # | relate_op mixed_expressions
-  # #| assign_with_op {%id%}
-  # | logical_op mixed_expressions
-  # | null
-
-add_choices
-  -> init_operands1 init_expr_add
-  | atChar_operands1 atChar_expr_add
-  | ids init_expr_add
-  | %L_paren add_choices %R_paren
-
-# init_atChar_add
-#   -> init_expr_add
-#   | atChar_expr_add
-#   | %add_op
-
-# add_num_expr
-#   -> add_num_operands add_num_expr_add
-
-# add_num_expr_add
-#   -> %add_op add_num_expr
-#   | null
-
-# add_num_operands
-#   -> init_operands
-
-# add_str_expr
-#   -> add_str_operands add_str_expr_add
-
-# add_str_expr_add
-#   -> %add_op add_str_expr
-#   | null
-
-# add_str_operands
-#   -> atChar_operands1 atChar_expr_add
-
-# paren_adds
-#   -> operator mixed_expressions
-#   | null
+-> operator mixed_expressions
+| null
 
 data_declare
-  -> data_id #data_choices
+  -> data_id data_choices
 
 data_choices
   -> %assign_only_op assignable_values #%terminator
@@ -359,32 +301,29 @@ arith_operand
 
 arith_operator
   -> arith_op {%id%}
-  # | assign_with_op {%id%}
-  # | relate_op {%id%}
+  | assign_with_op {%id%}
+  | relate_op {%id%}
 
 # Boolean Expression
-bool_expressions
-  -> bool_operand bool_expr_add
+# bool_expressions
+#   -> bool_operand bool_expr_add
 
-bool_expr_add
-  -> operator bool_expressions
-  | null
+# bool_expr_add
+#   -> bool_operator if_loop_expressions
+#   | null
 
-bool_operand
-  -> bool_operand_no_paren
-  | %L_paren mixed_expressions %R_paren
+# bool_operand
+#   -> %bool_lit
+#   #| ids {%id%}
+#   | typecast_bol
+#   #| trim_function {%id%}
+#   #| size_function {%id%}
+#   #| %not_op if_loop_expressions
+#   #| %L_paren bool_expressions %R_paren
 
-bool_operand_no_paren
-  -> %bool_lit
-  #| ids {%id%}
-  | typecast_bol
-  #| trim_function {%id%}
-  #| size_function {%id%}
-  | %not_op bool_operand
-
-bool_operator
-  -> relate_op {%id%}
-  | logical_op {%id%}
+# bool_operator
+#   -> relate_op {%id%}
+#   | logical_op {%id%}
 
 # String Expressions
 str_expressions
@@ -422,12 +361,6 @@ operator
   | assign_with_op {%id%}
   | logical_op {%id%}
 
-operator_no_assign
-  -> arith_op {%id%}
-  | relate_op {%id%}
-  #| assign_with_op {%id%}
-  | logical_op {%id%}
-
 # operand
 #   -> literals {%id%}
 #   | ids {%id%}
@@ -463,47 +396,12 @@ expressions_with_lit
 #   | %not_op expressions
 #   | %L_paren expressions %R_paren
 
-relate_expressions #for relational expressions
--> relate_operands relate_expr_add
-#| %not_op if_loop_operands bool_expr_add
-
-relate_expr_add
--> relate_op relate_expressions
-| null
-
-relate_operands
-  -> %bool_lit
-  | number_literals
-  #| %string_lit
-  | ids
-  | typecast_num
-  #| typecast_str
-  | typecast_bol
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op bool_operand
-  | %L_paren init_expressions %R_paren
-
-logic_expressions #for logical expressions
--> logic_operands logic_expr_add
-#| %not_op if_loop_operands bool_expr_add
-
-logic_expr_add
--> logical_op logic_expressions
-| null
-
-logic_operands
-  -> %bool_lit
-  | number_literals
-  #| %string_lit
-  | ids
-  | typecast_num
-  #| typecast_str
-  | typecast_bol
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op bool_operand
-  | %L_paren mixed_expressions %R_paren
+# if_loop_expressions #for bool
+# -> if_loop_operands bool_expr_add
+# | %not_op if_loop_operands bool_expr_add
+# -> bool_expressions bool_expr_add
+# | ids bool_expr_add
+# | %L_paren if_loop_paren_yes
 
 # if_loop_operands
 # -> bool_expressions {%id%}
@@ -530,7 +428,7 @@ init_expressions #for str
 -> init_operands init_expr_add
 
 init_expr_add
--> operator init_expressions
+-> arith_operator init_expressions
 | null
 
 init_operands
@@ -572,7 +470,7 @@ object_null_atPos
   | null
 
 object_access_atPos
-  -> %period object_atPos 
+  -> %period object_atPos
 
 object_atPos
   -> %id object_arr
@@ -591,22 +489,14 @@ bool_expr_add_no_paren
 atChar_expressions #for str
 -> atChar_operands atPos_method_yes atChar_expr_add
 
-atChar_expr_add
--> str_operator atChar_expressions
-| null
-
 atChar_operands
 #-> %string_lit
 -> %id id_choices_atChar
 #| typecast_str
 | %L_paren atChar_expressions %R_paren
-| atChar_operands1
 # -> str_expressions
 # | expressions
-
-atChar_operands1
--> %string_lit
-| typecast_str
+# | %L_paren atChar_expressions
 
 id_choices_atChar
   -> id_choices_atChar_yes
@@ -623,7 +513,7 @@ object_null_atChar
   | null
 
 object_access_atChar
-  -> %period object_atChar 
+  -> %period object_atChar
 
 object_atChar
   -> %id object_arr
@@ -697,7 +587,6 @@ assign_operators
   | %multiply_assign_op
   | %divide_assign_op
   | %modulo_assign_op
-  #| unary
 
 logical_op
   -> %and_op
@@ -745,7 +634,6 @@ id_choices
   -> object_access #unary_null
   | id_choices1
   #| unary
-  | id_choices1
   | null
 
 id_choices1
@@ -822,10 +710,10 @@ arr_methods
   #| null
 
 typecast_str
-  -> %str_typecast %L_paren input_statement_paren %R_paren
+  -> %str_typecast %L_paren mixed_expressions %R_paren
 
 typecast_num
-  -> %num_typecast %L_paren input_statement_paren %R_paren
+  -> %num_typecast %L_paren mixed_expressions %R_paren
 
 typecast_bol
   -> %bol_typecast %L_paren input_statement_paren %R_paren
@@ -850,7 +738,7 @@ input_statement
   -> %water %L_paren input_choices %R_paren
 
 input_choices
-  -> atChar_expressions
+  -> str_expressions
   # | ids
   # | %string_lit additional_str_method
 
@@ -876,7 +764,7 @@ if_statement
   # -> %if_word %L_paren bool_expressions %R_paren block_scope elif_statement else_statement
 
 elif_statement
-  -> %elif %L_paren mixed_expressions %R_paren block_scope elif_statement
+  -> %elif %L_paren mixed_expressions %R_paren block_scope
   # | %elif %L_paren if_loop_expressions %R_paren block_scope
   #-> %elif %L_paren bool_expressions %R_paren block_scope #else_statement
   | null
