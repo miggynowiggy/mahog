@@ -106,8 +106,8 @@ statement
   | null
 
 desired_statement
-  -> data_declare %terminator
-  | const_declare
+  -> data_declare {%id%}
+  | const_declare {%id%}
   | object_declare {%id%}
   | void_declare {%id%}
   | id_assign {%id%}
@@ -150,33 +150,17 @@ assign_val
 
 mixed_expressions
   -> number_literals init_expr_add
-  | %string_lit additional_str_method_expr 
+  | %string_lit additional_str_method atChar_expr_add
   | %bool_lit init_expr_add
   | ids mixed_adds
   | typecast_num init_expr_add
-  | typecast_str additional_str_method_expr
+  | typecast_str atChar_expr_add
   | typecast_bol init_expr_add
   | trim_function init_expr_add
   | size_function init_expr_add
   | %not_op init_operands init_expr_add
   #| %not_op mixed_expressions
   | %L_paren mixed_expressions %R_paren mixed_adds
-
-additional_str_method_expr
-  -> %period str_methods_yes
-  | atChar_expr_add
-
-str_methods_yes
-  -> atPos_method atChar_expr_add
-  | atChar_method init_expr_add
-
-atPos_method_yes
-  -> %period atPos_method
-  | null
-
-atChar_method_yes
-  -> %period atChar_method
-  | null
 
 # paren_expr 
 #   -> mixed_operands paren_adds
@@ -249,16 +233,15 @@ add_choices
 data_declare
   -> data_id #data_choices
 
-data_choices
-  -> %assign_only_op assignable_values #%terminator
-  | function_dec
-  #| %terminator
+ data_choices
+   -> %assign_only_op assignable_values %terminator
+   | function_dec
+   | %terminator
   | null
-
 num_choices
-  -> %assign_only_op num_values #%terminator
-  | function_dec
-  | %terminator
+   -> %assign_only_op num_values %terminator
+   | function_dec
+   | %terminator
   | null
 
 num_values
@@ -267,9 +250,9 @@ num_values
   | array_literal
 
 str_choices
-  -> %assign_only_op str_values #%terminator
-  | function_dec
-  | %terminator
+   -> %assign_only_op str_values %terminator
+   | function_dec
+   | %terminator
   | null
 
 str_values
@@ -279,7 +262,7 @@ str_values
 data_id
   -> %number_datatype %id num_choices
   | %string_datatype %id str_choices
-  | %boolean_datatype %id data_choices
+  | %boolean_datatype %id num_choices
   | %seed_datatype %id data_choices
 
 const_declare
@@ -302,11 +285,11 @@ object_wrapper
   -> %L_curl object_content %R_curl
 
 object_content
-  -> data_id %colon assignable_values %comma append_property
+  -> data_id %colon assignable_values append_property
   | null
 
 append_property
-  -> object_content
+  -> %comma object_content
   | null
 
 void_declare
@@ -405,8 +388,8 @@ str_operand
 
 str_operator
   -> %add_op
-  #| %add_assign_op
-  | relate_op
+  # | %add_assign_op
+  # | relate_op
 
 # General Expressions
 # expressions
@@ -526,60 +509,32 @@ logic_operands
 # if_loop_expressions_add
 #   -> mixed_expressions
 
-init_expressions #for str
+init_expressions # for num
 -> init_operands init_expr_add
+# -> arith_expressions
+# | expressions
+# | %L_paren init_expressions
 
 init_expr_add
 -> operator init_expressions
 | null
 
 init_operands
-#-> %string_lit
--> %id id_choices_atPos
-#| typecast_str
-| %L_paren init_paren
+#-> number_literals {%id%}
+-> ids {%id%}
+# | typecast_num
+# | trim_function {%id%}
+# | size_function {%id%}
+# | bool_expr_no_paren
+| %L_paren init_expressions %R_paren
 | init_operands1
-# -> str_expressions
-# | expressions
-
-init_paren
-  -> init_expressions %R_paren
-  | atChar_expressions %R_paren %period atChar_method
 
 init_operands1
 -> number_literals
-| %string_lit %period atChar_method
-| typecast_num
-| typecast_str %period atChar_method
-| %not_op init_operands
 | typecast_num
 | trim_function {%id%}
 | size_function {%id%}
 | bool_expr_no_paren
-
-id_choices_atPos
-  -> id_choices_atPos_yes
-  | object_access_atPos
-  | null
-
-id_choices_atPos_yes
-  -> array_access object_null_atPos #unary_null
-  | call_function
-  #| object_access #unary_null
-
-object_null_atPos
-  -> object_access_atPos
-  | null
-
-object_access_atPos
-  -> %period object_atPos 
-
-object_atPos
-  -> %id object_arr
-  # -> %id array_access unary
-  #-> %id array_access
-  | atChar_method
-  #| arr_methods
 
 bool_expr_no_paren
   -> bool_operand_no_paren bool_expr_add_no_paren
@@ -589,7 +544,7 @@ bool_expr_add_no_paren
   | null
 
 atChar_expressions #for str
--> atChar_operands atPos_method_yes atChar_expr_add
+-> atChar_operands str_expr_add
 
 atChar_expr_add
 -> str_operator atChar_expressions
@@ -597,7 +552,7 @@ atChar_expr_add
 
 atChar_operands
 #-> %string_lit
--> %id id_choices_atChar
+-> ids {%id%}
 #| typecast_str
 | %L_paren atChar_expressions %R_paren
 | atChar_operands1
@@ -607,30 +562,6 @@ atChar_operands
 atChar_operands1
 -> %string_lit
 | typecast_str
-
-id_choices_atChar
-  -> id_choices_atChar_yes
-  | object_access_atChar
-  | null
-
-id_choices_atChar_yes
-  -> array_access object_null_atChar #unary_null
-  | call_function
-  #| object_access #unary_null
-
-object_null_atChar
-  -> object_access_atChar
-  | null
-
-object_access_atChar
-  -> %period object_atChar 
-
-object_atChar
-  -> %id object_arr
-  # -> %id array_access unary
-  #-> %id array_access
-  #| atPos_method
-  #| arr_methods
 
 # paren_expressions
 # -> arith_expressions %R_paren arith_expr_add_paren
@@ -742,16 +673,12 @@ ids
 
 #new production
 id_choices
-  -> object_access #unary_null
-  | id_choices1
-  #| unary
-  | id_choices1
-  | null
-
-id_choices1
   -> array_access object_null #unary_null
   | call_function
-  #| object_access #unary_null
+  | object_access #unary_null
+  #| unary
+  | null
+
 
 object_access
   -> %period object_yes
@@ -785,11 +712,11 @@ call_function
   #| null
 
 array_access
-  -> %L_sqr init_expressions %R_sqr arr_2D
+  -> %L_sqr mixed_expressions %R_sqr arr_2D
   #| null
 
 arr_2D
-  -> %L_sqr init_expressions %R_sqr
+  -> %L_sqr mixed_expressions %R_sqr
   | null
 
 array_literal
@@ -831,7 +758,7 @@ typecast_bol
   -> %bol_typecast %L_paren input_statement_paren %R_paren
 
 input_statement_paren
-  -> mixed_expressions
+  -> mixed_expressions 
   | input_statement
 
 type_casting
@@ -886,7 +813,7 @@ else_statement
   | null
 
 loop_statement
-  -> %during %L_paren mixed_expressions %R_paren block_scope
+  -> %during %L_paren init_expressions %R_paren block_scope
   # | %during %L_paren if_loop_expressions %R_paren block_scope
   #-> %during %L_paren bool_expressions %R_paren block_scope
   | %cycle %L_paren cycle_condition %R_paren block_scope
