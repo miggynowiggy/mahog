@@ -162,7 +162,7 @@ mixed_expressions
   #| %not_op mixed_expressions
   | %L_paren mixed_expressions %R_paren mixed_adds
 
-# paren_expr 
+# paren_expr
 #   -> mixed_operands paren_adds
 
 # mixed_operands
@@ -233,15 +233,16 @@ add_choices
 data_declare
   -> data_id #data_choices
 
- data_choices
-   -> %assign_only_op assignable_values %terminator
-   | function_dec
-   | %terminator
+data_choices
+  -> %assign_only_op assignable_values %terminator
+  | function_dec
+  | %terminator
   | null
+
 num_choices
-   -> %assign_only_op num_values %terminator
-   | function_dec
-   | %terminator
+  -> %assign_only_op num_values %terminator
+  | function_dec
+  | %terminator
   | null
 
 num_values
@@ -250,9 +251,9 @@ num_values
   | array_literal
 
 str_choices
-   -> %assign_only_op str_values %terminator
-   | function_dec
-   | %terminator
+  -> %assign_only_op str_values %terminator
+  | function_dec
+  | %terminator
   | null
 
 str_values
@@ -263,7 +264,7 @@ data_id
   -> %number_datatype %id num_choices
   | %string_datatype %id str_choices
   | %boolean_datatype %id num_choices
-  | %seed_datatype %id data_choices
+  #| %seed_datatype %id data_choices
 
 const_declare
   -> const_start %assign_only_op assignable_values %terminator
@@ -278,8 +279,9 @@ object_id
   -> %object_datatype %id
 
 object_choice
-  -> %terminator
-  | %assign_only_op object_wrapper %terminator
+  -> %assign_only_op object_wrapper %terminator
+  # %terminator
+  #| %assign_only_op object_wrapper %terminator
 
 object_wrapper
   -> %L_curl object_content %R_curl
@@ -299,8 +301,13 @@ function_dec
   -> %L_paren dec_content %R_paren block_scope
 
 dec_content
-  -> data_id dec_content_append
+  -> data_type_choices %id dec_content_append
   | null
+
+data_type_choices
+  -> %string_datatype
+  | %number_datatype
+  | %boolean_datatype
 
 dec_content_append
   -> %comma dec_content
@@ -544,7 +551,7 @@ bool_expr_add_no_paren
   | null
 
 atChar_expressions #for str
--> atChar_operands str_expr_add
+-> atChar_operands atChar_expr_add
 
 atChar_expr_add
 -> str_operator atChar_expressions
@@ -758,7 +765,7 @@ typecast_bol
   -> %bol_typecast %L_paren input_statement_paren %R_paren
 
 input_statement_paren
-  -> mixed_expressions 
+  -> mixed_expressions
   | input_statement
 
 type_casting
