@@ -680,7 +680,7 @@ ids
 
 #new production
 id_choices
-  -> array_access object_null #unary_null
+  -> array_access #object_null #unary_null
   | call_function
   | object_access #unary_null
   #| unary
@@ -702,9 +702,9 @@ object_arr
   -> array_access
   | null
 
-object_null
-  -> object_access
-  | null
+# object_null
+#   -> object_access
+#   | null
 
 unary
   -> %unary
