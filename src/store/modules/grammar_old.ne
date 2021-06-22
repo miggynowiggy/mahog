@@ -283,29 +283,7 @@ operator
 operator_no_assign
   -> arith_op {%id%}
   | relate_op {%id%}
-#   | logical_op {%id%}
-
-# init_index_expressions
-# -> init_index_operands init_index_expr_add
-# | %num_lit init_expr_add
-# | atChar_operands1 atChar_init init_expr_add
-
-# init_index_expr_add
-# -> operator init_expr_add_follow
-
-# init_index_operands
-# -> ids {%id%}
-# | %L_paren init_paren 
-# | init_index_operands1
-# | %not_op init_operands
-
-# init_index_operands1
-# -> %nega_num_lit
-# | float_numbers
-# | typecast_num
-# | trim_function {%id%}
-# | size_function {%id%}
-# | bool_expr_no_paren
+  | logical_op {%id%}
 
 init_expressions
 -> init_operands init_expr_add
