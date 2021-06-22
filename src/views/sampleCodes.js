@@ -1,17 +1,34 @@
 export const code1 = `
-seed something;
-seed _num = "2";
-stone wawThisIsLong = 21;
-number wow = 123456789.987654321;
-number waw = ~12.213;
-number there = ~900;
-boolean isLegal = true;
-names = ["Some", "Valuable", "String"];
+number b = 2 + (21 / 3);
+number grades = [90, 88, 90, 87, 85];
+stone name = "miggy";
+
+object subj1 = {
+  string name: "cs elective",
+  number grade: 1.00,
+};
+
+number sum(number a, number b) {
+  number nums = [1, 2, 3];
+  number grade = 2 + subj1.grade;
+  return nums[0] + grade;
+}
+
+cycle (number index = 0; index < size(grades); index++) {
+  carve(grades[index]);
+}
+
+number anotherIndex = 0;
+number gradesLen = size(grades);
+during(anotherIndex < gradesLen) {
+  carve(grades[anotherIndex]);
+}
+
 `;
 
 export const code2 = `
-seed something;
-seed _num = "2";
+number something;
+number _num = "2";
 stone wawThisIsLong = 21;
 number wow = 123456789.987654321;
 number waw = ~12.213;
