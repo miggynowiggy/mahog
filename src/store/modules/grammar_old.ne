@@ -138,17 +138,34 @@ assign_val
 
 mixed_expressions
   -> number_literals init_expr_add
-  | %string_lit additional_str_method atChar_expr_add
+  | %string_lit stringlit_choices
   | %bool_lit init_expr_add
-  | ids mixed_adds
+  | ids mixed_adds 
   | typecast_num init_expr_add
-  | typecast_str atChar_expr_add
+  | typecast_str stringlit_choices
   | typecast_bol init_expr_add
   | trim_function init_expr_add
   | size_function init_expr_add
-  | %not_op init_operands init_expr_add
-  | %L_paren mixed_expressions %R_paren mixed_adds
+  | %not_op init_expressions
+  | %L_paren mixed_expressions %R_paren
 
+stringlit_choices
+  -> %period stringlit_choices_methods
+  | atPos_method_null_choices
+
+stringlit_choices_methods
+  -> atPos_method atPos_method_null_choices
+  | atChar_method init_expr_add
+
+atPos_method_null_choices
+  -> atChar_expr_add
+  | relate_op_bool init_expr_add_follow relate_string_add init_expr_add
+
+idmix_choices
+  -> %period stringlit_choices_methods
+  | mixed_adds
+
+  
 mixed_adds
   -> %add_op mixed_expressions
   | %subtract_op mixed_expressions
@@ -268,8 +285,69 @@ operator_no_assign
   | relate_op {%id%}
   | logical_op {%id%}
 
+init_index_expressions
+-> init_index_operands init_index_expr_add
+| %num_lit init_expr_add
+| atChar_operands1 atChar_init init_expr_add
+
+init_index_expr_add
+-> operator init_expr_add_follow
+
+init_index_operands
+-> ids {%id%}
+| %L_paren init_paren 
+| init_index_operands1
+| %not_op init_operands
+
+init_index_operands1
+-> %nega_num_lit
+| float_numbers
+| typecast_num
+| trim_function {%id%}
+| size_function {%id%}
+| bool_expr_no_paren
+
 init_expressions
 -> init_operands init_expr_add
+| atChar_operands1 atChar_init init_expr_add
+
+init_expr_add_follow
+  -> init_operands init_expr_add
+  | atChar_operands1 atChar_init_null init_expr_add
+
+init_expr_add
+-> operator init_expr_add_follow
+| null
+
+init_operands
+-> ids atChar_method_null
+| %L_paren init_paren 
+| init_operands1
+| %not_op init_operands
+
+init_paren
+  -> init_expressions %R_paren
+  | atChar_expressions %R_paren atChar_init
+
+init_operands1
+-> number_literals
+| typecast_num
+| trim_function {%id%}
+| size_function {%id%}
+| bool_expr_no_paren
+
+atChar_init
+  -> %period atChar_method 
+  | relate_op_bool init_expr_add_follow relate_string_add
+
+atChar_init_null
+  -> %period atChar_method 
+  | relate_op_bool init_expr_add_follow relate_string_add
+  | null
+
+relate_string_add
+  -> relate_op_bool init_expr_add_follow
+  | null
 
 arith_expressions
   -> arith_operand arith_expr_add
@@ -288,31 +366,9 @@ arith_operand
   | %L_paren arith_expressions %R_paren
   | bool_expr_no_paren
 
-init_expr_add
--> operator init_expressions
-| null
-
-init_operands
--> ids atChar_method_null
-| %L_paren init_paren 
-| init_operands1
-| %not_op init_operands
-
-init_paren
-  -> init_expressions %R_paren
-  | atChar_expressions %R_paren %period atChar_method
-
 atChar_method_null
   -> %period %atChar_word %L_paren atChar_expressions %R_paren
   | null
-
-init_operands1
--> number_literals
-| typecast_num
-| trim_function {%id%}
-| size_function {%id%}
-| bool_expr_no_paren
-| atChar_operands1 %period atChar_method
 
 bool_expr_no_paren
   -> bool_operand_no_paren bool_expr_add_no_paren
@@ -452,10 +508,10 @@ call_function
   -> function_call
 
 array_access
-  -> %L_sqr mixed_expressions %R_sqr arr_2D
+  -> %L_sqr init_index_expressions %R_sqr arr_2D
 
 arr_2D
-  -> %L_sqr mixed_expressions %R_sqr
+  -> %L_sqr init_index_expressions %R_sqr
   | null
 
 array_literal
@@ -553,7 +609,7 @@ paren_unary
 
 paren_unary_yes
 -> %unary
-| assign_op init_operands
+| assign_op init_expressions
 
 control
   -> %skip_word %terminator
