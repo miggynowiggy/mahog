@@ -320,12 +320,12 @@ export default {
         return;
       }
 
-      await this.$store.dispatch("semantics/ANALYZE");
-      const semanticErrors = this.$store.getters['semantics/errors'];
-      if (semanticErrors.length) {
-        this.playLoading = false;
-        return;
-      }
+      // await this.$store.dispatch("semantics/ANALYZE");
+      // const semanticErrors = this.$store.getters['semantics/errors'];
+      // if (semanticErrors.length) {
+      //   this.playLoading = false;
+      //   return;
+      // }
 
       this.playLoading = false;
       this.displayAlert('success', 'Run success!<br />No errors found!');
