@@ -533,7 +533,7 @@ else_statement
   | null
 
 loop_statement
-  -> %during %L_paren init_expressions %R_paren block_scope
+  -> %during %L_paren mixed_expressions %R_paren block_scope
   | %cycle %L_paren cycle_condition %R_paren block_scope
 
 cycle_condition

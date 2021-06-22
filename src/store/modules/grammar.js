@@ -333,7 +333,7 @@ var grammar = {
     {"name": "elif_statement", "symbols": []},
     {"name": "else_statement", "symbols": [(lexer.has("else_word") ? {type: "else_word"} : else_word), "block_scope"]},
     {"name": "else_statement", "symbols": []},
-    {"name": "loop_statement", "symbols": [(lexer.has("during") ? {type: "during"} : during), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "init_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "block_scope"]},
+    {"name": "loop_statement", "symbols": [(lexer.has("during") ? {type: "during"} : during), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "mixed_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "block_scope"]},
     {"name": "loop_statement", "symbols": [(lexer.has("cycle") ? {type: "cycle"} : cycle), (lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "cycle_condition", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "block_scope"]},
     {"name": "cycle_condition", "symbols": ["init_loop", (lexer.has("terminator") ? {type: "terminator"} : terminator), "cond_loop", (lexer.has("terminator") ? {type: "terminator"} : terminator), "paren_unary"]},
     {"name": "init_loop", "symbols": [(lexer.has("number_datatype") ? {type: "number_datatype"} : number_datatype), (lexer.has("id") ? {type: "id"} : id), (lexer.has("assign_only_op") ? {type: "assign_only_op"} : assign_only_op), "init_expressions"]},
