@@ -3,6 +3,8 @@ number b = 2 + (21 / 3);
 number grades = [90, 88, 90, 87, 85];
 stone name = "miggy";
 
+number N = 5;
+
 object subj1 = {
   string name: "cs elective",
   number grade: 1.00,
@@ -14,13 +16,21 @@ number sum(number a, number b) {
   return nums[0] + grade;
 }
 
-cycle (number index = 0; index < size(grades); index++) {
+number average() {
+  number sum2 = 0;
+  cycle (number gradeIndex = 0; gradeIndex < N; gradeIndex++) {
+    sum2 += grades[gradeIndex];
+  }
+  return sum2 / N;
+}
+
+cycle (number index = 0; index < N; index++) {
   carve(grades[index]);
 }
 
 number anotherIndex = 0;
-number gradesLen = size(grades);
-during(anotherIndex < gradesLen) {
+
+during(anotherIndex < N) {
   carve(grades[anotherIndex]);
 }
 

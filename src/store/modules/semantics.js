@@ -55,6 +55,7 @@ export default {
       let stop = false;
 
       let functionEncountered = { name: 'global', data_type: '' };
+      let nonFunctionBlock = false;
 
       while (index < N && !stop) {
         let prev = index - 1 >= 0 ? tokenStreamCopy[index - 1] : empty;
@@ -115,7 +116,7 @@ export default {
               // extract the parameters declared on the function
               while (current.lexeme !== '{') {
                 console.log('reading function params: ', current);
-                if (current.lexeme === ',' || current.lexeme === ')') {
+                if ((current.lexeme === ',' || current.lexeme === ')') && funcParams.length) {
                   param.scope = funcName;
                   funcParams.push({...param });
                   state.declaredIDs.push({
@@ -132,7 +133,7 @@ export default {
                 else if (dataTypes.includes(current.token)) {
                   param.data_type = current.token
                 }
-                else {
+                else if (current.lexeme !== '(') {
                   param.name = current.lexeme;
                 }
 
@@ -167,6 +168,7 @@ export default {
               id.isArr2D = result.is_arr_2d
               id.scope = functionEncountered.name;
               state.declaredIDs.push(id);
+              console.log('declared id: ', state.declaredIDs);
             }
           }
 
@@ -186,7 +188,7 @@ export default {
 
         // for object declaration
         else if (current.token === 'object' && next.token.includes('id-')) {
-          const isIdDeclared = state.declaredIDs.find(id => id.name === next.lexeme);
+          const isIdDeclared = state.declaredIDs.find(id => id.name === next.lexeme && (id.scope === functionEncountered.name || id.scope === 'global'));
 
           if (isIdDeclared) {
             commit("ADD_ERROR", {
@@ -285,13 +287,23 @@ export default {
             state.declaredIDs.push(id);
           }
         }
+
+        else if (current.lexeme === 'during' || current.lexeme === 'if' || current.lexeme === 'elif' || current.lexeme === 'cycle') {
+          nonFunctionBlock = true;
+          index += 1;
+          continue;
+        }
+        else if (nonFunctionBlock && current.lexeme === '}') {
+          nonFunctionBlock = false;
+          index += 1;
+          continue;
+        }
         // change the scoping of the variables if the closing tag for function is found
         else if (current.lexeme === '}' && next.lexeme !== ';' && functionEncountered.name !== 'global') {
           functionEncountered = { name: 'global' };
         }
-
         // check the return value of a function, not the return on the global scope
-        else if (functionEncountered.name !== 'global' && current.lexeme === 'return') {
+        else if (!nonFunctionBlock && functionEncountered.name !== 'global' && current.lexeme === 'return') {
           console.log('return encountered: ', functionEncountered.name);
           index += 1;
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
@@ -337,7 +349,7 @@ export default {
             index = next_index
           }
           else if (tokenStreamCopy[index].token.includes('id-') && !state.stoppers.includes(tokenStreamCopy[index + 1].lexeme)) {
-            const id = state.declaredIDs.find(i => i.name === tokenStreamCopy[index].lexeme);
+            const id = state.declaredIDs.find(i => i.name === tokenStreamCopy[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global'));
 
             if (!id) {
               commit("ADD_ERROR", {
@@ -724,7 +736,7 @@ export default {
       while(current.lexeme !== ';') {
         console.log(initialDataType);
         if (current.token.includes('id-')) {
-          const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme);
+          const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
           if (!isIdDeclared) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -780,7 +792,7 @@ export default {
       while(!stoppers.includes(current.lexeme)) {
         // check if the id is a function call
         if (current.token.includes('id-') && next.lexeme === '(') {
-          const id = state.declaredIDs.find(id => id.name === current.lexeme);
+          const id = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
           console.log('function call encountered: ', id);
 
           if (!id) {
@@ -904,7 +916,7 @@ export default {
 
         // if the id is appended with a string method, check if it is valid
         else if (current.token.includes('id-') && next.lexeme === '.' && state.tokenStream[index + 2].token === 'atPos') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           console.log('checking atPos: ', id);
 
           if (!id) {
@@ -964,7 +976,7 @@ export default {
 
         // if the id is appended with a string method, check if it is valid
         else if (current.token.includes('id-') && next.lexeme === '.' && state.tokenStream[index + 2].token === 'atChar') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -1022,7 +1034,7 @@ export default {
 
         // check if the id is an object access
         else if (current.token.includes('id-') && next.lexeme === '.') {
-          const id = state.declaredIDs.find(id => id.name === current.lexeme);
+          const id = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
           console.log("object detected: ", id);
 
           if (!id) {
@@ -1218,7 +1230,7 @@ export default {
 
         // check if the id is an array access
         else if (current.token.includes("id-") && next.lexeme === '[') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           console.log('array access: ', id);
 
           if (!id) {
@@ -1334,7 +1346,7 @@ export default {
 
         // if the id is not a function call, array access or object access
         else if (current.token.includes('id-') && next.lexeme !== '.' && next.lexeme !== '[' && next.lexeme !== '(') {
-          const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme);
+          const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
           console.log("only id: ", isIdDeclared);
 
           if (isIdDeclared && isIdDeclared.isArr) {
@@ -1432,7 +1444,7 @@ export default {
         // check if the id is an array access
         if (current.token.includes('id-') && next.lexeme === '[') {
           console.log('id expr is an array access');
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           idToAssign = id;
 
           if (!id) {
@@ -1498,7 +1510,7 @@ export default {
               result: false
             };
           }
-          else if (id && is.isArr2D && state.tokenStream[index].lexeme === '[') {
+          else if (id && id.isArr2D && state.tokenStream[index].lexeme === '[') {
             index += 1
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
@@ -1527,7 +1539,7 @@ export default {
         }
         // check array methods code
         else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2])) {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
 
           if (!id) {
             commit("ADD_ERROR", {
@@ -1563,7 +1575,7 @@ export default {
         else if (current.token.includes('id-') && next.lexeme === '.') {
           console.log('id expr is an object access');
           let propToAssign;
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
 
           if (!id) {
             commit("ADD_ERROR", {
@@ -1710,23 +1722,23 @@ export default {
           idToAssign = id;
           accessProp = propToAssign;
         }
-        else if (current.token.includes('id-') && next.lexeme === '(') {
-          commit("ADD_ERROR", {
-            type: 'SEM',
-            code: 'invalid-variable-assignment',
-            message: `value is being assigned to a function call`,
-            line: current.line,
-            col: current.col
-          });
-          return {
-            next_index: null,
-            result: false
-          };
-        }
+        // else if (current.token.includes('id-') && next.lexeme === '(') {
+        //   commit("ADD_ERROR", {
+        //     type: 'SEM',
+        //     code: 'invalid-variable-assignment',
+        //     message: `value is being assigned to a function call`,
+        //     line: current.line,
+        //     col: current.col
+        //   });
+        //   return {
+        //     next_index: null,
+        //     result: false
+        //   };
+        // }
         else if (current.token.includes('id-') && next.lexeme !== '.' && next.lexeme !== '[') {
           console.log('id expr is an id only');
-          const id = state.declaredIDs.find(i => i.name === current.lexeme);
-          console.log(id);
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          console.log(id, scope);
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -1812,6 +1824,10 @@ export default {
         next = state.tokenStream[index + 1];
       }
 
+      return {
+        next_index: index,
+        result: true
+      };
     }
   }
 }
