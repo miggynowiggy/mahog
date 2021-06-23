@@ -140,7 +140,7 @@ mixed_expressions
   -> number_literals init_expr_add
   | %string_lit stringlit_choices
   | %bool_lit init_expr_add
-  | ids mixed_adds 
+  | ids mixed_adds
   | typecast_num init_expr_add
   | typecast_str stringlit_choices
   | typecast_bol init_expr_add
@@ -172,7 +172,7 @@ mixed_adds
   | null
 
 data_declare
-  -> data_id 
+  -> data_id
 
 num_choices
   -> %assign_only_op num_values %terminator
@@ -311,20 +311,24 @@ operator_no_assign
   | logical_op {%id%}
 
 init_expressions
--> init_operands init_expr_add
+-> init_optional_nega init_operands init_expr_add
 | atChar_operands1 atChar_init init_expr_add
 
 init_expr_add_follow
-  -> init_operands init_expr_add
+  -> init_optional_nega init_operands init_expr_add
   | atChar_operands1 atChar_init_null init_expr_add
 
 init_expr_add
 -> operator init_expr_add_follow
 | null
 
+init_optional_nega
+  -> %nega_sign
+  | null
+
 init_operands
 -> ids atChar_method_null
-| %L_paren init_paren 
+| %L_paren init_paren
 | init_operands1
 | %not_op init_operands
 
@@ -340,11 +344,11 @@ init_operands1
 | bool_expr_no_paren
 
 atChar_init
-  -> %period atChar_method 
+  -> %period atChar_method
   | relate_op_bool init_expr_add_follow relate_string_add
 
 atChar_init_null
-  -> %period atChar_method 
+  -> %period atChar_method
   | relate_op_bool init_expr_add_follow relate_string_add
   | null
 
@@ -398,7 +402,7 @@ bool_expr_add_no_paren
   -> bool_operator bool_expr_no_paren
   | null
 
-atChar_expressions 
+atChar_expressions
 -> atChar_operands atPos_method_null atChar_expr_add
 
 str_expressions
@@ -505,9 +509,9 @@ ids
   -> %id id_choices
 
 id_choices
-  -> array_access 
+  -> array_access
   | call_function
-  | object_access 
+  | object_access
   | null
 
 object_access
