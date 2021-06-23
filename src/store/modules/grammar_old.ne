@@ -366,13 +366,13 @@ index_arith_expr_add
 
 index_arith_operand
   -> %num_lit
-  | ids {%id%}
-  | typecast_num
-  | trim_function {%id%}
-  | size_function {%id%}
-  | %not_op arith_operand
-  | %L_paren arith_expressions %R_paren
-  | bool_expr_no_paren
+  | option_sign option_negas
+ #| typecast_num
+ #| trim_function {%id%}
+ #| size_function {%id%}
+ #| %not_op arith_operand
+ #| %L_paren arith_expressions %R_paren
+ #| bool_expr_no_paren
 
 arith_expressions
   -> arith_operand arith_expr_add
@@ -383,13 +383,27 @@ arith_expr_add
 
 arith_operand
   -> number_literals {%id%}
-  | ids {%id%}
+  | option_sign option_negas
+ #| typecast_num
+ #| trim_function {%id%}
+ #| size_function {%id%}
+ #| %not_op arith_operand
+ #| %L_paren arith_expressions %R_paren
+ #| bool_expr_no_paren
+
+option_sign
+  -> %nega_sign
+  | null
+
+option_negas
+  -> ids {%id%}
+  | %L_paren arith_expressions %R_paren
   | typecast_num
   | trim_function {%id%}
   | size_function {%id%}
   | %not_op arith_operand
-  | %L_paren arith_expressions %R_paren
   | bool_expr_no_paren
+
 
 atChar_method_null
   -> %period %atChar_word %L_paren atChar_expressions %R_paren

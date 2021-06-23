@@ -110,7 +110,7 @@ export default {
     delims: {
       negaSign: [
         'NL', 'WS', 'id', 'LParen', 'negaFloatNumLit', 'floatNumLit',
-        'negaNumLit', 'numLit'
+        'negaNumLit', 'numLit', 'true', 'false'
       ],
       id: [
         'NL', 'WS', 'comma', 'period', 'colon', 'terminator', 'increment',
