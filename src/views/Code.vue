@@ -22,7 +22,7 @@
           <!-- The run, stop, clear button in the middle -->
           <v-col cols="12" align-self="start">
             <v-row align="center" justify="start" wrap>
-              <v-col cols="1" align="center">
+              <v-col md="1" xs="12" sm="3" align="center">
                 <v-tooltip top>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
@@ -42,7 +42,7 @@
                   <span class="text-subtitle-1">Run Code</span>
                 </v-tooltip>
               </v-col>
-              <v-col cols="1" align="center">
+              <v-col md="1" xs="12" sm="3" align="center">
                 <v-tooltip top>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
@@ -61,7 +61,7 @@
                   <span class="text-subtitle-1">Stop Code</span>
                 </v-tooltip>
               </v-col>
-              <v-col cols="1" align="center">
+              <v-col md="1" xs="12" sm="3" align="center">
                 <v-tooltip top>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
@@ -146,7 +146,7 @@
 </template>
 
 <script>
-import { code2, code3 } from './sampleCodes';
+import { code1, code2, code3 } from './sampleCodes';
 import { codemirror, CodeMirror } from 'vue-codemirror';
 
 require("codemirror/addon/mode/simple.js");
@@ -200,7 +200,7 @@ export default {
   data() {
     const self = this;
     return {
-      code: code2,
+      code: code1,
       cmOptions: {
         tabSize: 2,
         theme: "mbo",
@@ -280,6 +280,7 @@ export default {
       this.$store.commit("tokenizer/CLEAR_STREAM");
       this.$store.commit("lexical/CLEAR_ERRORS");
       this.$store.commit("syntax/CLEAR_ERRORS");
+      this.$store.commit("semantics/CLEAR_ERRORS");
     },
     stopCode() {
       this.playLoading = false;
@@ -307,7 +308,7 @@ export default {
       const lexicalErrors = this.$store.getters['lexical/errors'];
       if (!lexerSuccess || lexicalErrors.length) {
         this.playLoading = false;
-        this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
@@ -318,6 +319,13 @@ export default {
         // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
+
+      // await this.$store.dispatch("semantics/ANALYZE");
+      // const semanticErrors = this.$store.getters['semantics/errors'];
+      // if (semanticErrors.length) {
+      //   this.playLoading = false;
+      //   return;
+      // }
 
       this.playLoading = false;
       this.displayAlert('success', 'Run success!<br />No errors found!');
@@ -330,7 +338,8 @@ export default {
     errors() {
       const lexicalErrors = this.$store.getters['lexical/errors'];
       const syntaxErrors = this.$store.getters['syntax/errors'];
-      return [...lexicalErrors, ...syntaxErrors];
+      const semanticErrors = this.$store.getters['semantics/errors'];
+      return [...lexicalErrors, ...syntaxErrors, ...semanticErrors];
     },
   },
   watch: {

@@ -4,6 +4,7 @@ import lexical from "./modules/lexical";
 import syntax from "./modules/syntax";
 import tokenizer from "./modules/tokenizer";
 import errors from './modules/errors';
+import semantics from './modules/semantics';
 
 Vue.use(Vuex);
 
@@ -24,6 +25,7 @@ export default new Vuex.Store({
 		lexical,
 		syntax,
 		tokenizer,
-		errors
+		errors,
+		semantics
 	},
 });
