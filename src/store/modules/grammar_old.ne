@@ -139,7 +139,22 @@ assign_val
 mixed_expressions
   -> number_literals init_expr_add
   | %string_lit stringlit_choices
-  | %bool_lit init_expr_add
+  | optional_mixed_nega
+#  | %bool_lit init_expr_add
+#  | ids mixed_adds
+#  | typecast_num init_expr_add
+#  | typecast_str stringlit_choices
+#  | typecast_bol init_expr_add
+#  | trim_function init_expr_add
+#  | size_function init_expr_add
+#  | %not_op init_expressions
+#  | %L_paren mixed_expressions %R_paren mixed_adds
+
+optional_mixed_nega
+  -> option_sign optional_expr
+
+optional_expr  
+  -> %bool_lit init_expr_add
   | ids mixed_adds
   | typecast_num init_expr_add
   | typecast_str stringlit_choices
@@ -148,6 +163,7 @@ mixed_expressions
   | size_function init_expr_add
   | %not_op init_expressions
   | %L_paren mixed_expressions %R_paren mixed_adds
+
 
 stringlit_choices
   -> %period stringlit_choices_methods
@@ -445,7 +461,7 @@ atChar_operands
 | atChar_operands1
 
 atPos_method_null
-  -> %period %atPos_word %L_paren init_expressions %R_paren
+  -> %period %atPos_word %L_paren index_arith_expressions %R_paren
   | null
 
 atChar_operands1
