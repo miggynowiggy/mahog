@@ -147,7 +147,7 @@ mixed_expressions
   | trim_function init_expr_add
   | size_function init_expr_add
   | %not_op init_expressions
-  | %L_paren mixed_expressions %R_paren
+  | %L_paren mixed_expressions %R_paren mixed_adds
 
 stringlit_choices
   -> %period stringlit_choices_methods
@@ -161,11 +161,6 @@ atPos_method_null_choices
   -> atChar_expr_add
   | relate_op_bool init_expr_add_follow relate_string_add init_expr_add
 
-idmix_choices
-  -> %period stringlit_choices_methods
-  | mixed_adds
-
-  
 mixed_adds
   -> %add_op mixed_expressions
   | %subtract_op mixed_expressions
@@ -223,15 +218,45 @@ object_wrapper
   -> %L_curl object_content %R_curl
 
 object_content
-  -> data_id %colon assignable_values append_property
-  | null
+  -> %number_datatype %id %colon num_values %comma append_property
+  | %string_datatype %id %colon str_values %comma append_property
+  | %boolean_datatype %id %colon num_values %comma append_property
 
 append_property
-  -> %comma object_content
+  -> object_content
   | null
 
 void_declare
-  -> %void_datatype %id function_dec
+  -> %void_datatype %id void_dec
+
+void_dec
+  -> %L_paren dec_content %R_paren void_block_scope
+
+void_block_scope
+  -> %L_curl void_statements %R_curl
+
+void_statements
+  -> void_desired_statement void_statements
+  | %EOF
+  | null
+
+void_desired_statement
+  -> data_declare {%id%}
+  | const_declare {%id%}
+  | object_declare {%id%}
+  | void_declare {%id%}
+  | id_assign {%id%}
+  | output_statement {%id%}
+  | if_statement {%id%}
+  | loop_statement {%id%}
+  | control {%id%}
+  | trim_function %terminator
+  | type_casting %terminator
+  | size_function %terminator
+  | void_return_statement {%id%}
+
+void_return_statement
+  -> %return_word %terminator
 
 function_dec
   -> %L_paren dec_content %R_paren block_scope
@@ -326,6 +351,24 @@ atChar_init_null
 relate_string_add
   -> relate_op_bool init_expr_add_follow
   | null
+
+index_arith_expressions
+  -> index_arith_operand arith_expr_add
+  | %nega_num_lit index_arith_expr_add
+  | float_numbers index_arith_expr_add
+
+index_arith_expr_add
+  -> operator arith_expressions
+
+index_arith_operand
+  -> %num_lit
+  | ids {%id%}
+  | typecast_num
+  | trim_function {%id%}
+  | size_function {%id%}
+  | %not_op arith_operand
+  | %L_paren arith_expressions %R_paren
+  | bool_expr_no_paren
 
 arith_expressions
   -> arith_operand arith_expr_add
@@ -453,7 +496,7 @@ str_methods
   | atChar_method
 
 atPos_method
-  -> %atPos_word %L_paren arith_expressions %R_paren
+  -> %atPos_word %L_paren index_arith_expressions %R_paren
 
 atChar_method
   -> %atChar_word %L_paren str_expressions %R_paren
@@ -486,10 +529,10 @@ call_function
   -> function_call
 
 array_access
-  -> %L_sqr arith_expressions %R_sqr arr_2D
+  -> %L_sqr index_arith_expressions %R_sqr arr_2D
 
 arr_2D
-  -> %L_sqr arith_expressions %R_sqr
+  -> %L_sqr index_arith_expressions %R_sqr
   | null
 
 array_literal
@@ -510,8 +553,8 @@ append_element_2d_yes
 
 arr_methods
   -> %absorb %L_paren array_contents %R_paren
-  | %insert_word %L_paren init_expressions %comma array_contents %R_paren
-  | %uproot %L_paren init_expressions %R_paren
+  | %insert_word %L_paren index_arith_expressions %comma array_contents %R_paren
+  | %uproot %L_paren index_arith_expressions %R_paren
 
 typecast_str
   -> %str_typecast %L_paren input_statement_paren %R_paren
@@ -553,7 +596,6 @@ size_function
 size_function_choices
   -> atChar_expressions
   | array_literal
-  | ids
 
 if_statement
   -> %if_word %L_paren mixed_expressions %R_paren block_scope elif_statement else_statement
