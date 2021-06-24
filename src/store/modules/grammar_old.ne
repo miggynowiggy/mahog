@@ -632,14 +632,13 @@ size_function_choices
   | ids size_id_choices
 
 size_id_choices
-  -> atPos_method_null atChar_expr_add
-  | null
+  -> atPos_method_null size_expr_add
 
 size_expressions
 -> size_operands atPos_method_null size_expr_add
 
 size_expr_add
--> str_operator size_expressions
+-> str_operator atChar_expressions
 | null
 
 size_operands
