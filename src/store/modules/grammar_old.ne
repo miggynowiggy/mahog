@@ -628,8 +628,23 @@ size_function
   -> %size %L_paren size_function_choices %R_paren
 
 size_function_choices
-  -> atChar_expressions
-  | array_literal
+  -> size_expressions
+  | ids size_id_choices
+
+size_id_choices
+  -> atPos_method_null atChar_expr_add
+  | null
+
+size_expressions
+-> size_operands atPos_method_null size_expr_add
+
+size_expr_add
+-> str_operator size_expressions
+| null
+
+size_operands
+-> %L_paren size_expressions %R_paren
+| atChar_operands1
 
 if_statement
   -> %if_word %L_paren mixed_expressions %R_paren block_scope elif_statement else_statement
