@@ -506,7 +506,7 @@ export default {
         data_type: initialDataType
       }
     },
-    async CHECK_ID({ state, commit, dispatch }, { starting_index, data_type, terminating_symbol, scope }) {
+    async CHECK_ID ({ state, commit, dispatch }, { starting_index, data_type, terminating_symbol, scope }) {
       const reservedMethods = ['atPos', 'atChar', 'absorb', 'insert', 'uproot'];
       let index = starting_index;
       let current = state.tokenStream[index];
@@ -1390,21 +1390,14 @@ export default {
             const operand = state.tokenStream[index];
             console.log('checking first operand');
             if (operand.token.includes('id-')) {
-              const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
-              console.log('size func id: ', id);
-              if (!id) {
-                commit("ADD_ERROR", {
-                  type: 'SEM',
-                  code: 'undeclared-variable',
-                  message: `Undeclared variable -> [ ${operand.token} ]`,
-                  line: current.line,
-                  col: current.col
-                });
-                stop = true;
-                return {
-                  next_index: null, result: false, isArr, isArr2D
-                }
-              } else if (id && id.isConst && id.constDataAssigned !=='string') {
+              const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                starting_index: index,
+                datatype: 'any',
+                terminating_symbol: [')', [...state.stoppers]],
+                scope: scope
+              });
+
+              if (!next_index) {
                 commit("ADD_ERROR", {
                   type: 'SEM',
                   code: 'invalid-size-func-param',
@@ -1417,42 +1410,71 @@ export default {
                   next_index: null, result: false, isArr, isArr2D
                 }
               }
-              else if (id && !id.isArr && id.data_type !== 'string') {
-                commit("ADD_ERROR", {
-                  type: 'SEM',
-                  code: 'invalid-size-func-param',
-                  message: `size() function only accepts an array literal or a string expression`,
-                  line: current.line,
-                  col: current.col
-                });
-                stop = true;
-                return {
-                  next_index: null, result: false, isArr, isArr2D
-                }
-              } else {
-                const { next_index } = await dispatch("CHECK_EXPRESSION", {
-                  starting_index: index,
-                  datatype: 'any',
-                  terminating_symbol: [')', [...state.stoppers]],
-                  scope: scope
-                });
 
-                if (!next_index) {
-                  commit("ADD_ERROR", {
-                    type: 'SEM',
-                    code: 'invalid-size-func-param',
-                    message: `size() function only accepts an array literal or a string expression`,
-                    line: current.line,
-                    col: current.col
-                  });
-                  stop = true;
-                  return {
-                    next_index: null, result: false, isArr, isArr2D
-                  }
-                }
+              index = next_index;
 
-                index = next_index;
-              }
+              // const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
+              // console.log('size func id: ', id);
+              // if (!id) {
+              //   commit("ADD_ERROR", {
+              //     type: 'SEM',
+              //     code: 'undeclared-variable',
+              //     message: `Undeclared variable -> [ ${operand.token} ]`,
+              //     line: current.line,
+              //     col: current.col
+              //   });
+              //   stop = true;
+              //   return {
+              //     next_index: null, result: false, isArr, isArr2D
+              //   }
+              // } else if (id && id.isConst && id.constDataAssigned !=='string') {
+              //   commit("ADD_ERROR", {
+              //     type: 'SEM',
+              //     code: 'invalid-size-func-param',
+              //     message: `size() function only accepts an array literal or a string expression`,
+              //     line: current.line,
+              //     col: current.col
+              //   });
+              //   stop = true;
+              //   return {
+              //     next_index: null, result: false, isArr, isArr2D
+              //   }
+              // }
+              // else if (id && !id.isArr && id.data_type !== 'string') {
+              //   commit("ADD_ERROR", {
+              //     type: 'SEM',
+              //     code: 'invalid-size-func-param',
+              //     message: `size() function only accepts an array literal or a string expression`,
+              //     line: current.line,
+              //     col: current.col
+              //   });
+              //   stop = true;
+              //   return {
+              //     next_index: null, result: false, isArr, isArr2D
+              //   }
+              // } else {
+              //   const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              //     starting_index: index,
+              //     datatype: 'any',
+              //     terminating_symbol: [')', [...state.stoppers]],
+              //     scope: scope
+              //   });
+
+              //   if (!next_index) {
+              //     commit("ADD_ERROR", {
+              //       type: 'SEM',
+              //       code: 'invalid-size-func-param',
+              //       message: `size() function only accepts an array literal or a string expression`,
+              //       line: current.line,
+              //       col: current.col
+              //     });
+              //     stop = true;
+              //     return {
+              //       next_index: null, result: false, isArr, isArr2D
+              //     }
+              //   }
+
+              //   index = next_index;
             } else if (operand.lexeme === '[') {
               const { next_index } = await dispatch("CHECK_ARR_EXPRESSION", {
                 starting_index: index,
