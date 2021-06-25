@@ -16,10 +16,10 @@ export default {
       "number": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
-        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit',
+        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit', 'size', 'num',
         'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement'
       ],
-      "string": ["addOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma'],
+      "string": ["addOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma', 'str'],
       "boolean": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
@@ -1252,6 +1252,7 @@ export default {
 
           // check for num type cast functions
           else if (current.lexeme === 'num' && !isExprConditional) {
+            console.log("num typecast error")
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-type-cast-in-expr',
@@ -1264,6 +1265,7 @@ export default {
               next_index: null, result: false, isArr, isArr2D
             }
           } else if (current.lexeme === 'num' && next.lexeme === '(') {
+            console.log('checking num typecast')
             index += 2;
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
@@ -1369,6 +1371,7 @@ export default {
 
           // size function checking
           else if (current.lexeme === 'size' && data_type === 'string') {
+            console.log('size function error');
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-expr-value',
@@ -1381,11 +1384,14 @@ export default {
               next_index: null, result: false, isArr, isArr2D
             }
 
-          } else if (current.lexeme === 'size' && next.lexeme === '(') {
+          } else if (current.lexeme === 'size') {
+            console.log('size function encountered');
             index += 2;
             const operand = state.tokenStream[index];
+            console.log('checking first operand');
             if (operand.token.includes('id-')) {
               const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
+              console.log('size func id: ', id);
               if (!id) {
                 commit("ADD_ERROR", {
                   type: 'SEM',
@@ -1398,7 +1404,20 @@ export default {
                 return {
                   next_index: null, result: false, isArr, isArr2D
                 }
-              } else if (id && !id.isArr && id.data_type !== 'string') {
+              } else if (id && id.isConst && id.constDataAssigned !=='string') {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-size-func-param',
+                  message: `size() function only accepts an array literal or a string expression`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              }
+              else if (id && !id.isArr && id.data_type !== 'string') {
                 commit("ADD_ERROR", {
                   type: 'SEM',
                   code: 'invalid-size-func-param',
@@ -1413,7 +1432,7 @@ export default {
               } else {
                 const { next_index } = await dispatch("CHECK_EXPRESSION", {
                   starting_index: index,
-                  datatype: 'string',
+                  datatype: 'any',
                   terminating_symbol: [')', [...state.stoppers]],
                   scope: scope
                 });
@@ -1481,6 +1500,7 @@ export default {
 
               index = next_index;
             } else {
+              console.log('no case to handle')
               index += 1;
             }
           }
