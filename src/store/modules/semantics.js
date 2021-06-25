@@ -116,7 +116,7 @@ export default {
               // extract the parameters declared on the function
               while (current.lexeme !== '{') {
                 console.log('reading function params: ', current);
-                if ((current.lexeme === ',' || current.lexeme === ')') && funcParams.length) {
+                if ((current.lexeme === ',' || current.lexeme === ')')) { 
                   param.scope = funcName;
                   funcParams.push({...param });
                   state.declaredIDs.push({
@@ -169,6 +169,14 @@ export default {
               id.scope = functionEncountered.name;
               state.declaredIDs.push(id);
               console.log('declared id: ', state.declaredIDs);
+            }
+            
+            // for variable declaration with no values
+            else if (tokenStreamCopy[index + 2].lexeme === ';'){
+              id.scope = functionEncountered.name;
+              state.declaredIDs.push(id);
+              console.log('declared id: ', state.declaredIDs);
+              index += 3;
             }
           }
 
@@ -321,6 +329,7 @@ export default {
           index = next_index;
         }
 
+        // unreachable???
         // size function parameters
         else if (current.token === 'size') {
           index += 2;
@@ -697,6 +706,87 @@ export default {
 
             index = next_index;
           }
+
+          // else if(current.token === 'size'){
+          //   console.log("checking parameter in expr: ", data_type);
+          //   let functionEncountered = { name: 'global', data_type: '' };
+          //   index += 2;
+          //   // if the size parameter is detected as an expression then evaluate the expression
+          //   const isTokenStrOrArr = state.tokenStream[index].token === 'stringLit' || state.tokenStream[index].token.includes("id-");
+          //   console.log(isTokenStrOrArr);
+          //   if(state.tokenStream[index].token.includes('id-')){
+          //     const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSIONS", {
+          //       starting_index: index,
+          //       terminating_symbol: ')',
+          //       data_type: state.declaredIDs.find(i => i.name === state.tokenStream[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global')).data_type,
+          //       scope: functionEncountered.name
+          //     })
+
+          //   }
+          //   if(state.tokenStream[index].token === 'stringLit'){
+          //     console.log('hays');
+          //   }
+          //   if (isTokenStrOrArr && state.stoppers.includes(state.tokenStream[index+1].lexeme)) {
+          //     const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSION", {
+          //       starting_index: index,
+          //       terminating_symbol: ')',
+          //       data_type: data_type,
+          //       scope: functionEncountered.name
+          //     })
+          //     if (!next_index) {
+          //       commit("ADD_ERROR", {
+          //         type: 'SEM',
+          //         code: 'invalid-size-func-parameter',
+          //         message: `the supplied expression on size function is not a string value`,
+          //         line: current.line,
+          //         col: current.col
+          //       });
+          //       // stop = true;
+          //       return;
+          //     }
+
+          //     index = next_index
+          //   }
+          //   else if (state.tokenStream[index].token.includes('id-') && state.stoppers.includes(state.tokenStream[index + 1].lexeme)) {
+          //     const id = state.declaredIDs.find(i => i.name === state.tokenStream[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global'));
+          //     // console.log(id);
+          //     if (!id) {
+          //       commit("ADD_ERROR", {
+          //         type: 'SEM',
+          //         code: 'undeclared-variable',
+          //         message: `Undeclared variable -> [ ${state.tokenStream[index].lexeme} ]`,
+          //         line: current.line,
+          //         col: current.col
+          //       });
+          //       // stop = true;
+          //       return;
+          //     }
+          //     else if (id && (!id.isArr || id.data_type !== 'string')) {
+          //       commit("ADD_ERROR", {
+          //         type: 'SEM',
+          //         code: 'invalid-size-func-parameter',
+          //         message: `Variable [ ${id.name} ] does not contain a string value`,
+          //         line: current.line,
+          //         col: current.col
+          //       });
+          //       // stop = true;
+          //       return;
+          //     }
+          //   }
+          //   else if (state.tokenStream[index+1].token !== 'stringLit' && !state.stoppers.includes(state.tokenStream[index + 2].lexeme)) {
+          //     commit("ADD_ERROR", {
+          //       type: 'SEM',
+          //       code: 'invalid-size-func-parameter',
+          //       message: `[ ${state.tokenStream[index+1].lexeme} ] is not allowed as a parameter to size function.`,
+          //       line: current.line,
+          //       col: current.col
+          //     });
+          //     // stop = true;
+          //     return;
+          //   }
+          //   index += 1;
+          // }
+
           else if (!isTokenValid) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -815,6 +905,21 @@ export default {
               type: 'SEM',
               code: 'invalid-function-call',
               message: `Variable [ ${current.lexeme} ] is not a function.`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null,
+              result: false
+            };
+          }
+
+          // if function is found in a wrong data type
+          else if(data_type !== id.data_type){
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'value-data-type-mismatch',
+              message: `Operand [ ${current.lexeme} ] contains a non-${data_type} value`,
               line: current.line,
               col: current.col
             });
@@ -1770,6 +1875,19 @@ export default {
               type: 'SEM',
               code: 'invalid-array-use',
               message: `[ ${id.name} ] contains an array value`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null,
+              result: false
+            };
+          }
+          else if (id.isConst === true && next.lexeme === '=') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-constant-assigment',
+              message: `Invalid constant reassignment`,
               line: current.line,
               col: current.col
             });
