@@ -449,11 +449,17 @@ str_operand
   | %L_paren str_expressions %R_paren
 
 str_operator
-  -> %add_op
+  -> arith_op {%id%}
+  | relate_op_num {%id%}
+  | logical_op {%id%}
 
 atChar_expr_add
--> str_operator atChar_expressions
+-> str_operator atChar_expr_add_follow
 | null
+
+atChar_expr_add_follow
+  -> atChar_expressions
+  | init_operands1 atChar_expr_add
 
 atChar_operands
 -> ids {%id%}
