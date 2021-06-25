@@ -11,12 +11,13 @@ export default {
       '+', '-', '*', '/', '%', '&&', '||', '+=', '-=', '*=', '/=', '%=',
       '!=', '==', '<', '>', '<=', '>=', ';', ',', ')'
     ],
+    allowedDataTypes: ['boolean', 'number', 'string'],
     allowedTokensInExpr: {
       "number": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
         'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit',
-        'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr'
+        'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement'
       ],
       "string": ["addOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma'],
       "boolean": [
@@ -64,12 +65,12 @@ export default {
 
         // Check variable, object and function declarations
         if (dataTypes.includes(current.token) && next.token.includes("id-")) {
+          console.log('declaring data for: ', current.lexeme, next.lexeme);
           const isIdDeclared = state.declaredIDs.find(id => id.name === next.lexeme);
           const isIdFuncDec = tokenStreamCopy[index + 2].lexeme === '(';
 
           const allowedFuncDataTypes = ['stone', 'number', 'string', 'boolean', 'void'];
           if (allowedFuncDataTypes.includes(current.token) && !isIdDeclared) {
-            console.log("getting variable and function declaration: ", current.lexeme, next.lexeme);
             const id = {
               data_type: current.token,
               name: next.lexeme,
@@ -116,7 +117,7 @@ export default {
               // extract the parameters declared on the function
               while (current.lexeme !== '{') {
                 console.log('reading function params: ', current);
-                if ((current.lexeme === ',' || current.lexeme === ')')) { 
+                if ((current.lexeme === ',' || current.lexeme === ')')) {
                   param.scope = funcName;
                   funcParams.push({...param });
                   state.declaredIDs.push({
@@ -141,7 +142,7 @@ export default {
                 current = tokenStreamCopy[index];
               }
 
-              id.funcParams = funcParams;
+              id.funcParams = funcParams.filter(p => p.name);
               id.scope = 'global';
               console.log('pushing func: ', id);
               functionEncountered = id;
@@ -151,28 +152,59 @@ export default {
 
             // for assigning an array literal or non-array expression
             else if (!isIdFuncDec && tokenStreamCopy[index + 2].lexeme === '=') {
-              const result = await dispatch("CHECK_EXPRESSION", {
-                starting_index: index + 3,
-                data_type: id.data_type,
-                terminating_symbol: ';',
-                scope: functionEncountered.name
-              });
+              let result;
+              console.log('assigning value to data declaration');
+              if (tokenStreamCopy[index + 3].lexeme === '[') {
+                result = await dispatch("CHECK_ARR_EXPRESSION", {
+                  starting_index: index + 3,
+                  datatype: id.data_type,
+                  terminating_symbol: [';']
+                });
 
-              if (!result.next_index) {
-                stop = true;
-                return;
+                if (!result.next_index) {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'invalid-variable-assignment',
+                    message: `expression to assign does not match with the data type of the variable`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  stop = true;
+                  return;
+                }
+
+              } else {
+                result = await dispatch("CHECK_EXPRESSION", {
+                  starting_index: index + 3,
+                  datatype: id.data_type,
+                  terminating_symbol: [';'],
+                  scope: functionEncountered.name
+                });
+                console.log('result: ', result);
+
+                if (!result.next_index) {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'invalid-variable-assignment',
+                    message: `expression to assign does not match with the data type of the variable`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  stop = true;
+                  return;
+                }
               }
 
               index = result.next_index;
-              id.isArr = result.is_arr;
-              id.isArr2D = result.is_arr_2d
+              id.isArr = result.isArr;
+              id.isArr2D = result.isArr2D
               id.scope = functionEncountered.name;
               state.declaredIDs.push(id);
               console.log('declared id: ', state.declaredIDs);
             }
-            
+
             // for variable declaration with no values
-            else if (tokenStreamCopy[index + 2].lexeme === ';'){
+            else if (tokenStreamCopy[index + 2].lexeme === ';') {
               id.scope = functionEncountered.name;
               state.declaredIDs.push(id);
               console.log('declared id: ', state.declaredIDs);
@@ -240,10 +272,10 @@ export default {
               }
 
               else if (current.lexeme === ':') {
-                const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSION", {
+                const { next_index, isArr, isArr2D } = await dispatch("CHECK_EXPRESSION", {
                   starting_index: index + 1,
-                  data_type: prop.data_type,
-                  terminating_symbol: ',',
+                  datatype: prop.data_type,
+                  terminating_symbol: [','],
                   scope: functionEncountered.name
                 });
 
@@ -253,8 +285,8 @@ export default {
                 }
 
                 index = next_index;
-                prop.isArr = is_arr;
-                prop.isArr2D = is_arr_2d;
+                prop.isArr = isArr;
+                prop.isArr2D = isArr2D;
               }
 
               else if (current.lexeme === ',') {
@@ -296,9 +328,19 @@ export default {
           }
         }
 
+        // for conditional statements
         else if (current.lexeme === 'during' || current.lexeme === 'if' || current.lexeme === 'elif' || current.lexeme === 'cycle') {
+          const { next_index } = await dispatch("CHECK_CONDITIONALS", {
+            starting_index: index,
+            scope: functionEncountered.name
+          });
+
+          if (!next_index) {
+            return;
+          }
+
           nonFunctionBlock = true;
-          index += 1;
+          index = next_index;
           continue;
         }
         else if (nonFunctionBlock && current.lexeme === '}') {
@@ -306,9 +348,12 @@ export default {
           index += 1;
           continue;
         }
+
         // change the scoping of the variables if the closing tag for function is found
-        else if (current.lexeme === '}' && next.lexeme !== ';' && functionEncountered.name !== 'global') {
+        else if (!nonFunctionBlock && current.lexeme === '}' && next.lexeme !== ';' && functionEncountered.name !== 'global') {
           functionEncountered = { name: 'global' };
+          index += 1;
+          continue;
         }
         // check the return value of a function, not the return on the global scope
         else if (!nonFunctionBlock && functionEncountered.name !== 'global' && current.lexeme === 'return') {
@@ -316,8 +361,8 @@ export default {
           index += 1;
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
             starting_index: index,
-            data_type: functionEncountered.data_type,
-            terminating_symbol: ';',
+            datatype: functionEncountered.data_type,
+            terminating_symbol: [';'],
             scope: functionEncountered.name
           });
 
@@ -329,72 +374,30 @@ export default {
           index = next_index;
         }
 
-        // unreachable???
-        // size function parameters
-        else if (current.token === 'size') {
+        else if (current.lexeme === 'carve') {
           index += 2;
-          // if the size parameter is detected as an expression then evaluate the expression
-          const isTokenStrOrArr = tokenStreamCopy[index].token === 'stringLit' || tokenStreamCopy[index].token.includes("id-");
-          if (isTokenStrOrArr && state.stoppers.includes(tokenStreamCopy[index + 1].lexeme)) {
-            const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSION", {
+          if (state.tokenStream[index].lexeme === ')') index += 2;
+          else {
+            const { next_index } = await dispatch('CHECK_EXPRESSION', {
               starting_index: index,
-              terminating_symbol: ')',
-              data_type: 'string',
+              datatype: 'any',
+              terminating_symbol: [')', ';'],
               scope: functionEncountered.name
-            })
+            });
 
             if (!next_index) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'invalid-size-func-parameter',
-                message: `the supplied expression on size function is not a string value or an array literal`,
+                code: 'invalid-carve-param',
+                message: `carve() parameter should only be of single data type`,
                 line: current.line,
                 col: current.col
               });
-              stop = true;
-              return;
+              return
             }
 
-            index = next_index
+            index = next_index;
           }
-          else if (tokenStreamCopy[index].token.includes('id-') && !state.stoppers.includes(tokenStreamCopy[index + 1].lexeme)) {
-            const id = state.declaredIDs.find(i => i.name === tokenStreamCopy[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global'));
-
-            if (!id) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'undeclared-variable',
-                message: `Undeclared variable -> [ ${tokenStreamCopy[index].lexeme} ]`,
-                line: current.line,
-                col: current.col
-              });
-              stop = true;
-              return;
-            }
-            else if (id && (!id.isArr || id.data_type !== 'string')) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-size-func-parameter',
-                message: `Variable [ ${id.name} ] does not contain a string value nor an array literal`,
-                line: current.line,
-                col: current.col
-              });
-              stop = true;
-              return;
-            }
-          }
-          else if (tokenStreamCopy[index].token !== 'stringLit' && !state.stoppers.includes(tokenStreamCopy[index + 1].lexeme)) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-size-func-parameter',
-              message: `[ ${tokenStreamCopy[index].lexeme} ] is not allowed as a parameter to size function.`,
-              line: current.line,
-              col: current.col
-            });
-            stop = true;
-            return;
-          }
-          index += 1;
         }
 
         // check for id assignments
@@ -419,404 +422,6 @@ export default {
       }
       console.table(state.declaredIDs);
     },
-    async CHECK_EXPRESSION({ state, commit, dispatch }, details) {
-      const { starting_index, data_type, terminating_symbol, scope } = details
-
-      let index = starting_index;
-      let current = state.tokenStream[index];
-      let next = state.tokenStream[index + 1];
-
-      let isExprArr = false;
-      let isArr2D = false;
-
-      // determine if the expression is an array by checking the first token of the expression
-      if (current.lexeme === '[') {
-        console.log('checking array content: ', current.lexeme);
-        isExprArr = true;
-        let arr2DOpening = false;
-        let arr2DComplete = false;
-
-        index += 1;
-        current = state.tokenStream[index];
-        let stop = false;
-        while (!stop) {
-          console.log('checking array content: ', current.lexeme);
-          // the arr literal is 2d if another [ is encountered
-          if (current.lexeme === '[') {
-            console.log('2d arr found')
-            isArr2D = true;
-            arr2DOpening = true;
-            arr2DComplete = false;
-            index += 1;
-          }
-          // acknowledge that the inner array has been completed
-          else if (arr2DOpening && current.lexeme === ']') {
-            console.log('2d arr closed')
-            arr2DComplete = true;
-            arr2DOpening = false;
-            index += 1;
-          }
-          // terminate the checking if the outer array has been closed
-          else if (arr2DComplete && current.lexeme === ']' && terminating_symbol.includes(next.lexeme)) {
-            stop = true;
-            console.log('dapat tapos na')
-            return {
-              next_index: index,
-              is_arr: isExprArr,
-              is_arr_2d: isArr2D
-            }
-          }
-          // terminate checking if the array content has been evaluated
-          else if (!isArr2D && current.lexeme === ']') {
-            console.log('dapat tapos na')
-            stop = true;
-            return {
-              next_index: index ,
-              is_arr: isExprArr,
-              is_arr_2d: isArr2D
-            }
-          }
-          // check if string literal has a string atPos method
-          else if (current.token === 'stringLit' && state.tokenStream[index + 1].lexeme === '.' && state.tokenStream[index + 2].token === 'atPos') {
-            if (data_type !== 'string') {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${current.lexeme}.atPos() ] contains a non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 4,
-              terminating_symbol: ')',
-              data_type: 'number',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atPos-parameter',
-                message: `atPos() string method was supplied with a non-numeric value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            index = next_index;
-          }
-          // check if string literal has a string atChar method
-          else if (current.token === 'stringLit' && state.tokenStream[index + 1].lexeme === '.' && state.tokenStream[index + 2].token === 'atChar') {
-            if (data_type !== 'number' && data_type !== 'boolean') {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${current.lexeme}.atChar() ] contains a non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 4,
-              terminating_symbol: ')',
-              data_type: 'string',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atChar-parameter',
-                message: `atChar() string method was supplied with a non-string value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            index = next_index;
-          }
-          // determine if the id contains valid data
-          else if (current.token.includes("id-")) {
-            const { next_index, result } = await dispatch("CHECK_ID", {
-              starting_index: index,
-              data_type: data_type,
-              scope: scope
-            });
-
-            if (!result) {
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            index = next_index;
-          }
-          // determine if the the ids or literals in the expression is allowed
-          else if (!state.allowedTokensInExpr[String(data_type)] && state.allowedTokensInExpr[String(data_type)].includes(current.token)) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'value-data-type-mismatch',
-              message: `Operand [ ${current.lexeme} ] contains a non-${data_type} value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              is_arr: isExprArr,
-              is_arr_2d: isArr2D
-            }
-          }
-          // just iterate if none is found
-          else {
-            index += 1;
-          }
-
-          current = state.tokenStream[index];
-          next = state.tokenStream[index + 1];
-        }
-
-      } else {
-        while(!terminating_symbol.includes(current.lexeme)) {
-          console.log('checking non-array expression: ', current.lexeme);
-          const isTokenValid = state.allowedTokensInExpr[String(data_type)] && state.allowedTokensInExpr[String(data_type)].includes(current.token);
-
-          if (current.token.includes('id-')) {
-            console.log("checking ID in expr: ", data_type)
-            const { next_index, result } = await dispatch("CHECK_ID", {
-              starting_index: index,
-              data_type: data_type,
-              scope: scope
-            });
-
-            if (!result) {
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              };
-            } else {
-              index = next_index;
-            }
-
-          }
-          // check if the string literal has an attached string method
-          else if (current.token === 'stringLit' && state.tokenStream[index + 1].lexeme === '.' && state.tokenStream[index + 2].lexeme === 'atPos') {
-            if (data_type !== 'string') {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${current.lexeme}.atPos() ] contains a non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 4,
-              terminating_symbol: [')'],
-              data_type: 'number',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atPos-parameter',
-                message: `atPos() string method was supplied with a non-numeric value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            index = next_index;
-          }
-          // check if the string literal has an attached string method
-          else if (current.token === 'stringLit' && state.tokenStream[index + 1].lexeme === '.' && state.tokenStream[index + 2].lexeme === 'atChar') {
-            if (data_type !== 'number' && data_type !== 'boolean') {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${current.lexeme}.atChar() ] contains a non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 4,
-              terminating_symbol: [')'],
-              data_type: 'string',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atChar-parameter',
-                message: `atChar() string method was supplied with a non-numeric value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                is_arr: isExprArr,
-                is_arr_2d: isArr2D
-              }
-            }
-
-            index = next_index;
-          }
-
-          // else if(current.token === 'size'){
-          //   console.log("checking parameter in expr: ", data_type);
-          //   let functionEncountered = { name: 'global', data_type: '' };
-          //   index += 2;
-          //   // if the size parameter is detected as an expression then evaluate the expression
-          //   const isTokenStrOrArr = state.tokenStream[index].token === 'stringLit' || state.tokenStream[index].token.includes("id-");
-          //   console.log(isTokenStrOrArr);
-          //   if(state.tokenStream[index].token.includes('id-')){
-          //     const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSIONS", {
-          //       starting_index: index,
-          //       terminating_symbol: ')',
-          //       data_type: state.declaredIDs.find(i => i.name === state.tokenStream[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global')).data_type,
-          //       scope: functionEncountered.name
-          //     })
-
-          //   }
-          //   if(state.tokenStream[index].token === 'stringLit'){
-          //     console.log('hays');
-          //   }
-          //   if (isTokenStrOrArr && state.stoppers.includes(state.tokenStream[index+1].lexeme)) {
-          //     const { next_index, is_arr, is_arr_2d } = await dispatch("CHECK_EXPRESSION", {
-          //       starting_index: index,
-          //       terminating_symbol: ')',
-          //       data_type: data_type,
-          //       scope: functionEncountered.name
-          //     })
-          //     if (!next_index) {
-          //       commit("ADD_ERROR", {
-          //         type: 'SEM',
-          //         code: 'invalid-size-func-parameter',
-          //         message: `the supplied expression on size function is not a string value`,
-          //         line: current.line,
-          //         col: current.col
-          //       });
-          //       // stop = true;
-          //       return;
-          //     }
-
-          //     index = next_index
-          //   }
-          //   else if (state.tokenStream[index].token.includes('id-') && state.stoppers.includes(state.tokenStream[index + 1].lexeme)) {
-          //     const id = state.declaredIDs.find(i => i.name === state.tokenStream[index].lexeme && (i.scope === functionEncountered.name || i.scope === 'global'));
-          //     // console.log(id);
-          //     if (!id) {
-          //       commit("ADD_ERROR", {
-          //         type: 'SEM',
-          //         code: 'undeclared-variable',
-          //         message: `Undeclared variable -> [ ${state.tokenStream[index].lexeme} ]`,
-          //         line: current.line,
-          //         col: current.col
-          //       });
-          //       // stop = true;
-          //       return;
-          //     }
-          //     else if (id && (!id.isArr || id.data_type !== 'string')) {
-          //       commit("ADD_ERROR", {
-          //         type: 'SEM',
-          //         code: 'invalid-size-func-parameter',
-          //         message: `Variable [ ${id.name} ] does not contain a string value`,
-          //         line: current.line,
-          //         col: current.col
-          //       });
-          //       // stop = true;
-          //       return;
-          //     }
-          //   }
-          //   else if (state.tokenStream[index+1].token !== 'stringLit' && !state.stoppers.includes(state.tokenStream[index + 2].lexeme)) {
-          //     commit("ADD_ERROR", {
-          //       type: 'SEM',
-          //       code: 'invalid-size-func-parameter',
-          //       message: `[ ${state.tokenStream[index+1].lexeme} ] is not allowed as a parameter to size function.`,
-          //       line: current.line,
-          //       col: current.col
-          //     });
-          //     // stop = true;
-          //     return;
-          //   }
-          //   index += 1;
-          // }
-
-          else if (!isTokenValid) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'value-data-type-mismatch',
-              message: `Operand [ ${current.lexeme} ] contains a non-${data_type} value.`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              is_arr: isExprArr,
-              is_arr_2d: isArr2D
-            };
-
-          } else {
-            index += 1;
-          }
-
-          current = state.tokenStream[index];
-          next = state.tokenStream[index + 1];
-        }
-
-        return {
-          next_index: index,
-          is_arr: isExprArr,
-          is_arr_2d: isArr2D
-        };
-      }
-
-    },
     async CHECK_STONE_EXPRESSION({ state, commit, dispatch }, details) {
       let index = details.starting_index;
       let current = state.tokenStream[index];
@@ -824,7 +429,6 @@ export default {
 
       let initialDataType = null;
       while(current.lexeme !== ';') {
-        console.log(initialDataType);
         if (current.token.includes('id-')) {
           const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
           if (!isIdDeclared) {
@@ -862,6 +466,7 @@ export default {
             data_type: initialDataType
           }
         }
+        console.log(initialDataType);
 
         index += 1;
         current = state.tokenStream[index];
@@ -872,668 +477,902 @@ export default {
         data_type: initialDataType
       }
     },
-    async CHECK_ID({ state, commit, dispatch }, { starting_index, data_type, scope }) {
+    async CHECK_ID({ state, commit, dispatch }, { starting_index, data_type, terminating_symbol, scope }) {
+      const reservedMethods = ['atPos', 'atChar', 'absorb', 'insert', 'uproot'];
       let index = starting_index;
       let current = state.tokenStream[index];
       let next = state.tokenStream[index + 1];
+      let stop = false;
 
-      const stoppers = ['+', '-', '*', '/', '%', '+=', '-=', '*=', '/=', '%=', '>', '<', '>=', '<=', "!=", '==', '||', '&&', ';', ',', ']'];
+      const isExprConditional = data_type === 'number' || data_type === 'boolean';
 
-      while(!stoppers.includes(current.lexeme)) {
-        // check if the id is a function call
-        if (current.token.includes('id-') && next.lexeme === '(') {
-          const id = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
-          console.log('function call encountered: ', id);
-
+      while (!stop) {
+        // just double check if the id is id
+        if (current.token.includes("id-")) {
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          console.log('id encountered: ', id, 'data type to check: ', data_type);
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
+              message: `undeclared variable -> [ ${current.lexeme} ]`,
               line: current.line,
               col: current.col
             });
-            return {
-              next_index: null,
-              result: false
-            };
+            return { next_index: null, result: false };
           }
-
-          // check if the id was declared as a function
-          else if (id && !id.isFunc) {
+          else if (id && data_type === 'any') {
+            console.log('any data type encountered');
+            return { next_index: index + 1, result: true, data_type: id.data_type }
+          }
+          else if (id && !id.isConst && !isExprConditional && id.data_type !== data_type && next.lexeme !== '.') {
             commit("ADD_ERROR", {
               type: 'SEM',
-              code: 'invalid-function-call',
-              message: `Variable [ ${current.lexeme} ] is not a function.`,
+              code: 'invalid-variable-value',
+              message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
               line: current.line,
               col: current.col
             });
-            return {
-              next_index: null,
-              result: false
-            };
+            return { next_index: null, result: false };
           }
-
-          // if function is found in a wrong data type
-          else if(data_type !== id.data_type){
+          // check if the id is a constant
+          else if (id && id.isConst && id.constDataAssigned && id.constDataAssigned !== data_type) {
+            console.log('const assign: ', data_type)
             commit("ADD_ERROR", {
               type: 'SEM',
-              code: 'value-data-type-mismatch',
-              message: `Operand [ ${current.lexeme} ] contains a non-${data_type} value`,
+              code: 'invalid-variable-value',
+              message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
               line: current.line,
               col: current.col
             });
-            return {
-              next_index: null,
-              result: false
-            };
+            return { next_index: null, result: false };
           }
 
-          index += 2;
+          // check if the ID is an array access
+          else if (id && next.lexeme === '[') {
+            console.log('id is array access', id);
 
-          // gather the parameters that needs analysis
-          const paramList = [];
-          const param = { indexes: [], terminating_symbol: '' };
-          let isParenEncountered = false;
-
-          // determine the index of the first operands of the parameter
-          while (true) {
-            current = state.tokenStream[index];
-            next = state.tokenStream[index + 1];
-
-            if (current.lexeme === ',') {
-              param.terminating_symbol = current.lexeme;
-              paramList.push({ ...param });
-              param.indexes = [];
-              isParenEncountered = false;
-
+            if (id && !id.isArr) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-array-access',
+                message: `variable -> [ ${id.name} ] is not declared with an array value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
             }
-            else if (current.lexeme === '(') {
-              isParenEncountered = true;
-              param.indexes.push(index)
+            else if (id && id.isObj) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-array-access',
+                message: `variable -> [ ${id.name} ] is not declared with an array value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
             }
-            else if (isParenEncountered && current.lexeme === ')') {
-              isParenEncountered = false;
-              param.indexes.push(index)
+            else if (id && id.isArr && next.lexeme !== '[') {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-array-usage',
+                message: `variable -> [ ${id.name} ] is contains an array value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
             }
-            else if (!isParenEncountered && current.lexeme === ')') {
-              param.terminating_symbol = current.lexeme;
-              paramList.push({ ...param });
-              param.indexes = [];
-              isParenEncountered = false;
-              index += 1;
-              break;
+            else if (id && id.isArr && next.lexeme === '[') {
+              index += 2;
+              console.log('checking 1st arr expr: ', state.tokenStream[index]);
+
+              const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                starting_index: index,
+                datatype: 'number',
+                terminating_symbol: [']'],
+                scope: scope
+              });
+
+              console.log('1st element check: ', next_index);
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-array-index',
+                  message: `index provided to variable -> [ ${id.name}[] ] is not a numeric value`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next_index: null, result: false };
+              }
+
+              index = next_index + 1;
+              console.log('checking if id array access has 2d: ', state.tokenStream[index].lexeme)
+              if (!id.isArr2D && state.tokenStream[index].lexeme === '[') {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-array-access',
+                  message: `variable -> [ ${id.name} ] is not declared with a 2-dimensional array value`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next_index: null, result: false };
+
+              } else if (id.isArr2D && state.tokenStream[index].lexeme === '[') {
+                index += 1;
+                const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                  starting_index: index,
+                  datatype: 'number',
+                  terminating_symbol: [']'],
+                  scope: scope
+                });
+
+                if (!next_index) {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'invalid-array-index',
+                    message: `index provided to variable -> [ ${id.name}[] ] is not a numeric value`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  return { next_index: null, result: false };
+                }
+
+                return { next_index: next_index, result: true };
+              } else  {
+                return { next_index: index, result: true };
+              }
             }
-            else {
-              param.indexes.push(index);
+          } // end of array checking
+
+          // check for object checking
+          else if (id && next.lexeme === '.' && !reservedMethods.includes(state.tokenStream[index + 1])) {
+            index += 2;
+            console.log('object checking', id)
+            if (id && !id.isObj) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-object-access',
+                message: `variable -> [ ${id.name} ] is not declared with an object literal value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
             }
+            else if (id && id.isObj) {
+              const prop = id.properties.find(p => p.name === state.tokenStream[index].lexeme);
+              console.log('object prop check', prop)
+              if (!prop) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-object-access',
+                  message: `[ ${state.tokenStream[index]} ] is not a property of [ ${id.name} ]`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next_index: null, result: false };
+              }
+              else if (prop && !isExprConditional && prop.data_type !== data_type) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'value-data-type-mismatch',
+                  message: `[ ${id.name}.${prop.name} ] contains a non-${data_type} value`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next_index: null, result: false };
+              }
+              else if (prop && prop.isArr) {
+                index += 1;
+                if (state.tokenStream[index] !== '[') {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'invalid-array-access',
+                    message: `[ ${id.name}.${prop.name} ] contains an array value`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  return { next_index: null, result: false };
 
-            index += 1;
-          }
+                } else if (state.tokenStream[index] === '[') {
+                  index += 1;
+                  const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                    starting_index: index,
+                    datatype: 'number',
+                    terminating_symbol: ']',
+                    scope: scope
+                  });
 
-          if (paramList.length !== id.funcParams.length) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'mismatched-function-param-count',
-              message: `Function [ ${id.name} ] expects ${id.funcParams.length} parameter/s, provided ${paramList.length}`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
+                  if (!next_index) {
+                    commit("ADD_ERROR", {
+                      type: 'SEM',
+                      code: 'invalid-array-index',
+                      message: `index provided to variable -> [ ${id.name}.${prop.name}[] ] is not a numeric value`,
+                      line: current.line,
+                      col: current.col
+                    });
+                    return { next: null, result: false }
+                  }
 
-          for(let loopIndex = 0; loopIndex < paramList.length; loopIndex++) {
-            console.log('checking for param: ', id.funcParams[loopIndex]);
-            console.log('checking param: ', paramList[loopIndex]);
+                  index = next_index + 1;
+                  if (prop.isArr2D && state.tokenStream[index] !== '[') {
+                    commit("ADD_ERROR", {
+                      type: 'SEM',
+                      code: 'invalid-array-access',
+                      message: `[ ${id.name}.${prop.name} ] contains a 2-dimentional array value`,
+                      line: current.line,
+                      col: current.col
+                    });
+                    return { next_index: null, result: false };
 
+                  } else if (!prop.isArr && state.tokenStream[index] === '[') {
+                    commit("ADD_ERROR", {
+                      type: 'SEM',
+                      code: 'invalid-array-access',
+                      message: `[ ${id.name}.${prop.name} ] does not contain a 2-dimensional array value`,
+                      line: current.line,
+                      col: current.col
+                    });
+                    return { next_index: null, result: false };
+                  } else if (prop.isArr && state.tokenStream[index] === '[') {
+                    index += 1;
+                    const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                      starting_index: index,
+                      datatype: 'number',
+                      terminating_symbol: [']'],
+                      scope: scope
+                    });
+
+                    if (!next_index) {
+                      commit("ADD_ERROR", {
+                        type: 'SEM',
+                        code: 'invalid-array-index',
+                        message: `index provided to variable -> [ ${id.name}.${prop.name}[][] ] is not a numeric value`,
+                        line: current.line,
+                        col: current.col
+                      });
+                      return { next: null, result: false }
+                    }
+
+                    index = next_index;
+                    return { next_index: index, result: true };
+                  }
+                }
+              } else if (prop && !prop.isArr) {
+                index += 1;
+                return { next_index: index, result: true };
+              }
+            }
+          } // end of object checking
+
+          // check for atPos string method
+          else if (next.lexeme === '.' && state.tokenStream[index + 1] === 'atPos') {
+            if(id.data_type !== 'string' ) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-atPos-usage',
+                message: `string method .atPos can only be used on a variable that holds a string value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+            index += 2;
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: paramList[loopIndex].indexes[0],
-              data_type: id.funcParams[loopIndex].data_type,
-              terminating_symbol: paramList[loopIndex].terminating_symbol,
-              scope: id.scope
+              starting_index: index,
+              datatype: 'number',
+              terminating_symbol: [')'],
+              scope: scope
             });
 
             if (!next_index) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `Data type mismatch on function parameter [ ${id.funcParams[loopIndex].name} ] of function [ ${id.name} ]`,
+                code: 'invalid-atPos-index',
+                message: `string method .atPos was provided with a non-numeric value parameter`,
                 line: current.line,
                 col: current.col
               });
-              return {
-                next_index: null,
-                result: false
-              };
+              return { next: null, result: false }
             }
 
             index = next_index;
-          }
 
-          return {
-            next_index: index + 1,
-            result: true
-          }
-        }
+          } /// end of atPos method checking
 
-        // if the id is appended with a string method, check if it is valid
-        else if (current.token.includes('id-') && next.lexeme === '.' && state.tokenStream[index + 2].token === 'atPos') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
-          console.log('checking atPos: ', id);
-
-          if (!id) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          // throw an error is the variable is not holding a string value
-          else if (id && id.data_type !== 'string') {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-atPos-usage',
-              message: `variable [ ${id.name} ] does not hold a string literal value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          // check if the supplied parameter for atPos is a numeric value
-          index += 4;
-          const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            starting_index: index,
-            terminating_symbol: [';', ')'],
-            data_type: 'number',
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-atPos-parameter',
-              message: `atPos() string method was supplied with a non-numeric value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          index = next_index;
-        }
-
-        // if the id is appended with a string method, check if it is valid
-        else if (current.token.includes('id-') && next.lexeme === '.' && state.tokenStream[index + 2].token === 'atChar') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
-          if (!id) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          // check if the data holds a string data type
-          else if (id && (id.data_type !== 'string' || id.isArr)) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-atChar-usage',
-              message: `variable [ ${id.name} ] does not hold a string literal value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          // check if the supplied parameter for atChar is a numeric value
-          index += 3;
-          const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            starting_index: index,
-            terminating_symbol: [')', ...state.stoppers],
-            data_type: 'number',
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-atChar-parameter',
-              message: `atChar() string method was supplied with a non-string value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          index = next_index;
-        }
-
-        // check if the id is an object access
-        else if (current.token.includes('id-') && next.lexeme === '.') {
-          const id = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
-          console.log("object detected: ", id);
-
-          if (!id) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          // advance the pointer to the id after the period symbol
-          index += 2;
-          current = state.tokenStream[index];
-          next = state.tokenStream[index + 1];
-
-          // check if the property is not an array access
-          if (current.token.includes("id-") && next.lexeme !== '[') {
-            const isPropsPresent = id.properties.find(prop => prop.name === current.lexeme);
-            console.log("object property: ", isPropsPresent);
-
-            if (!isPropsPresent) {
+          // check for atChar string method
+          else if (next.lexeme === '.' && state.tokenStream[index + 1] === 'atChar') {
+            if(id.data_type !== 'string' ) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'undeclared-object-property',
-                message: `Property [ ${current.lexeme} ] is not a declared property in object [ ${id.name} ]`,
+                code: 'invalid-atChar-usage',
+                message: `string method .atChar can only be used on a variable that holds a string value`,
                 line: current.line,
                 col: current.col
               });
-              return {
-                next_index: null,
-                result: false
-              };
+              return { next: null, result: false }
             }
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'string',
+              terminating_symbol: [')'],
+              scope: scope
+            });
 
-            else if (isPropsPresent && isPropsPresent.isArr) {
+            if (!next_index) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${id.name}.${isPropsPresent.name} ] contains an array value`,
+                code: 'invalid-atChar-index',
+                message: `string method .atChar was provided with a non-numeric value parameter`,
                 line: current.line,
                 col: current.col
               });
-              return {
-                next_index: null,
-                result: false
-              };
+              return { next: null, result: false }
             }
 
-            else if (isPropsPresent && isPropsPresent.data_type !== data_type && !isPropsPresent.isArr) {
+            index = next_index;
+
+          } /// end of atChar method checking
+
+          // check function call
+          else if (id && next.lexeme === '(') {
+            console.log('function call: ', id);
+            if (id && !id.isFunc) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `[ ${id.name}.${isPropsPresent.name} ] contains a non-${data_type} value`,
+                code: 'invalid-function-call',
+                message: `[ ${id.name} ] is not a function`,
                 line: current.line,
                 col: current.col
               });
-              return {
-                next_index: null,
-                result: false
-              };
-            }
+              return { next: null, result: false }
 
+            } else if (id && id.isFunc) {
+              index += 2;
+              console.log("processing parameters: ", state.tokenStream[index]);
+              let paramList = [];
+              let param = { indexes: [], terminating_symbol: '' };
+              let parenEncounter = 0;
+              current = state.tokenStream[index];
+              while (true) {
+                if (current.lexeme === '(') {
+                  parenEncounter += 1;
+                  index += 1;
+                  param.indexes.push(index)
+                  current = state.tokenStream[index];
+                } else if (parenEncounter && current.lexeme === ')') {
+                  parenEncounter -= 1;
+                  index += 1;
+                  param.indexes.push(index);
+                  current = state.tokenStream[index];
+                } else if (!parenEncounter && current.lexeme === ',') {
+                  param.terminating_symbol = current.lexeme;
+                  paramList.push({...param });
+                  param.indexes = [];
+                  param.terminating_symbol = '';
+                  index += 1;
+                  current = state.tokenStream[index];
+                } else if (!parenEncounter && current.lexeme === ')') {
+                  param.terminating_symbol = current.lexeme;
+                  paramList.push({...param });
+                  param.indexes = [];
+                  param.terminating_symbol = '';
+                  index += 1;
+                  break;
+                } else {
+                  param.indexes.push(index);
+                  index += 1;
+                  current = state.tokenStream[index];
+                }
+              }
+
+              paramList = paramList.filter(p => p.indexes.length);
+
+              console.log('gathered params: ', paramList);
+
+              if (id.funcParams.length !== paramList.length) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-function-call',
+                  message: `[ ${id.name} ] was expecting ${id.funcParams.length}, but supplied ${paramList.length}`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next: null, result: false }
+              }
+
+              for (let loopIndex = 0; loopIndex < paramList.length; loopIndex++) {
+                const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                  starting_index: paramList[loopIndex].indexes[0],
+                  datatype: id.funcParams[loopIndex].data_type,
+                  terminating_symbol: [paramList[loopIndex].terminating_symbol],
+                  scope: scope
+                });
+
+                if (!next_index) {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'value-data-type-mismatch',
+                    message: `Data type mismatch on function parameter [ ${id.parameters[loopIndex].name} ] of function [ ${id.name} ]`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  return { next_index: null, result: false };
+                }
+
+                index = next_index;
+                console.log('param is valid');
+              }
+
+              console.log('next character: ', state.tokenStream[index]);
+              return { next_index: index, result: true };
+            }
+            return { next_index: index, result: true };
+          } // end of function call checking
+
+          else if (next.lexeme !== '.' && next.lexeme !== '[' && next.lexeme !== '(') {
+            console.log("id only")
             return {
               next_index: index + 1,
               result: true
             };
           }
 
-          else if (current.token.includes("id-") && next.lexeme === '[') {
-            const isPropsPresent = id.properties.find(prop => prop.name === current.lexeme);
-            if (!isPropsPresent) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'undeclared-object-property',
-                message: `[ ${isPropsPresent.name} ] is not a declared property on object [ ${id.name} ]`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              }
-            }
-
-            // throw an error if the property is not an array and is being accessed like an array
-            else if (isPropsPresent && !isPropsPresent.isArr) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-array-usage',
-                message: `[ ${id.name}.${isPropsPresent.name} ] is does not contain an array value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              }
-            }
-
-            // check if the array index is a valid arithmetic expression
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 2,
-              terminating_symbol: [']'],
-              data_type: 'number',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-array-index',
-                message: `[ ${id.name}.${isPropsPresent.name}[] ] is supplied a non-numeric index`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              };
-            }
-
-            // check if the array is 2d
-            index = next_index;
-            if (isPropsPresent.isArr && !isPropsPresent.isArr2D && state.tokenStream[index].lexeme === '[') {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-array-usage',
-                message: `[ ${id.name}.${isPropsPresent.name} ] is not a 2-dimensional array`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              };
-            }
-
-            // if the second index is supplied, check the index if its a valid arithmetic expression
-            else if (isPropsPresent.isArr && isPropsPresent.isArr2D && state.tokenStream[index].lexeme === '[') {
-              const { next_index } = await dispatch("CHECK_EXPRESSION", {
-                starting_index: index + 1,
-                terminating_symbol: [']'],
-                data_type: 'number',
-                scope: scope
-              });
-
-              if (!next_index) {
-                commit("ADD_ERROR", {
-                  type: 'SEM',
-                  code: 'invalid-array-index',
-                  message: `[ ${id.name}.${isPropsPresent.name} ] is supplied with a non-numeric index`,
-                  line: current.line,
-                  col: current.col
-                });
-                return {
-                  next_index: null,
-                  result: false
-                };
-              }
-
-              index = next_index;
-            }
-
-            // Throw an error if the array element does not match the intended data type
-            if (isPropsPresent.data_type !== data_type) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `Object property [ ${id.name}.${isPropsPresent.name} ] contains a non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              };
-            }
-
-            return {
-              next_index: next_index + 1,
-              result: true
-            };
-          }
-
-          index += 1;
         }
-
-        // check if the id is an array access
-        else if (current.token.includes("id-") && next.lexeme === '[') {
-          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
-          console.log('array access: ', id);
-
-          if (!id) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            }
-          }
-
-          // Throw an error if the id does not contain an array literal, but array acceess is being used on it.
-          else if (id && !id.isArr) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Variable [ ${current.lexeme} ] is not a valid array variable`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            }
-          }
-
-          // check if expression inside the array access is a valid arithmetic expression
-          const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            starting_index: index + 2,
-            data_type: 'number',
-            terminating_symbol: [']'],
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-array-usage',
-              message: `[ ${id.name} ] is supplied with a non-numeric index`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            }
-          }
-
-          index = next_index + 1;
-          console.log(state.tokenStream[index].lexeme)
-          if (id.isArr2D && state.tokenStream[index].lexeme === '[') {
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index + 1,
-              terminating_symbol: [']'],
-              data_type: 'number',
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-array-usage',
-                message: `[ ${id.name} ] is supplied with a non-numeric index`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              }
-            }
-
-            index = next_index;
-          }
-          else if (!id.isArr2D && state.tokenStream[index].lexeme === '[') {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-array-usage',
-              message: `[ ${id.name} ] is not a 2-dimensional array`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            }
-          }
-
-          if (id.data_type !== data_type) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'vale-data-type-mismatch',
-              message: `Variable [ ${id.name} ] contains a non-${data_type} value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
+        else if (terminating_symbol.include(current.token)) {
+          stop = true;
           return {
-            next_index: index + 1,
-            result: true
-          }
-        }
-
-        // if the id is not a function call, array access or object access
-        else if (current.token.includes('id-') && next.lexeme !== '.' && next.lexeme !== '[' && next.lexeme !== '(') {
-          const isIdDeclared = state.declaredIDs.find(id => id.name === current.lexeme && (id.scope === scope || id.scope === 'global'));
-          console.log("only id: ", isIdDeclared);
-
-          if (isIdDeclared && isIdDeclared.isArr) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-array-usage',
-              message: `Variable [ ${current.lexeme} ] contains an array value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          } else if (isIdDeclared && isIdDeclared.data_type === 'object') {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-object-usage',
-              message: `Variable [ ${current.lexeme} ] contains an object value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          } else if (isIdDeclared && isIdDeclared.data_type === 'stone') {
-            if (isIdDeclared.constDataAssigned !== data_type) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'value-data-type-mismatch',
-                message: `Variable [ ${current.lexeme} ] contains non-${data_type} value`,
-                line: current.line,
-                col: current.col
-              });
-              return {
-                next_index: null,
-                result: false
-              };
-            }
-          } else if (isIdDeclared && isIdDeclared.data_type !== data_type) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'value-data-type-mismatch',
-              message: `Variable [ ${current.lexeme} ] contains non-${data_type} value`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          } else if (!isIdDeclared) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'undeclared-variable',
-              message: `Undeclared variable -> [ ${current.lexeme} ]`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null,
-              result: false
-            };
-          }
-
-          return {
-            next_index: index + 1,
+            next_index: index,
             result: true
           };
         }
+
         else {
+          console.log('unhandled id check: ', state.tokenStream[index]);
           index += 1;
         }
 
         current = state.tokenStream[index];
         next = state.tokenStream[index + 1];
       }
-
       return {
-        next_index: index + 1,
+        next_index: index,
         result: true
+      };
+    },
+    async CHECK_ARR_EXPRESSION({ state, commit, dispatch }, { starting_index, terminating_symbol, datatype, scope }) {
+      let index = starting_index;
+      let N = state.tokenStream.length;
+      let current = state.tokenStream[index];
+      let next = index + 1 !== N ? state.tokenStream[index + 1] : { lexeme: '', token: '', col: 0, line: 0 };
+
+      let arrCounter = 0;
+      let isArr = false;
+      let isArr2D = false;
+      let stop = false;
+      let data_type = datatype;
+
+      isArr = true;
+      index += 1; //advance to the first element of the array
+      current = state.tokenStream[index];
+      next = state.tokenStream[index + 1];
+
+      if (data_type === 'any') {
+        console.log('any data type on arr expr')
+        let checkOperand = current;
+        if (checkOperand.lexeme === '(') {
+          let innerIndex = index;
+          while (checkOperand.lexeme === '(') {
+            checkOperand = state.tokenStream[innerIndex];
+            innerIndex += 1;
+          }
+        }
+
+        basisDataType = await dispatch("CHECK_OPERAND_TYPE", {
+          operand: checkOperand
+        });
+
+        if (!basisDataType) {
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'invalid-expr-value',
+            message: `cannot infer type of [ ${checkOperand.lexeme} ]`,
+            line: current.line,
+            col: current.col
+          });
+          return {
+            next_index: null, result: false, isArr, isArr2D
+          }
+
+        } else {
+          data_type = basisDataType;
+        }
+      }
+
+      while(!stop) {
+        console.log('checking array element content', current);
+        if (current.lexeme === '[') {
+          console.log('2d array encountered');
+          isArr2D = true;
+          arrCounter += 1;
+          index += 1;
+        }
+        else if (isArr2D && current.lexeme === ']' && arrCounter) {
+          console.log('2d array closed')
+          arrCounter -= 1;
+          index += 1;
+        }
+        else if (current.lexeme === ',') {
+          console.log('array element separator encountered');
+          index += 1;
+        }
+        else if (!arrCounter && (terminating_symbol.includes(current.lexeme) || current.lexeme === ']')) {
+          console.log('terminating arr expr check');
+          index += 1;
+          stop = true;
+          return {
+            next_index: index, result: true, isArr, isArr2D
+          };
+        }
+        else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
+          // const { next_index } = await dispatch("CHECK_EXPRESSION", {
+          //   starting_index: index,
+          //   datatype: data_type,
+          //   scope: scope,
+          //   terminating_symbol: [',']
+          // });
+          // console.log('finished arr element eval: ', next_index);
+
+          // if (!next_index) {
+          //   return {
+          //     next_index: null, result: false, isArr, isArr2D
+          //   }
+          // }
+
+          // index = next_index;
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'invalid-expr-value',
+            message: `[ ${current.lexeme} ] is not allowed in ${data_type} expression`,
+            line: current.line,
+            col: current.col
+          });
+          stop = true;
+          return {
+            next_index: null, result: false, isArr, isArr2D
+          }
+        } else {
+          console.log('checking array element no case');
+          index += 1;
+        }
+
+        current = state.tokenStream[index];
+        next = index + 1 !== N ? state.tokenStream[index + 1] : { lexeme: '', token: '', col: 0, line: 0 };
+      }
+      console.log("returning to CHECK_EXPR:");
+      return {
+        next_index: index, result: true, isArr, isArr2D
+      }
+    },
+    async CHECK_OPERAND_TYPE({ state, commit, dispatch }, { operand }) {
+      if (operand.token.includes('id-')) {
+        const id = state.declaredIDs.find(i => i.name === operand.lexeme);
+        console.log('checking id type: ', id);
+        if (!id) {
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'undeclared-variable',
+            message: `Undeclared variable -> [ ${current.lexeme} ]`,
+            line: current.line,
+            col: current.col
+          });
+          return null;
+
+        } else {
+          console.log(id.data_type);
+          return id.data_type;
+        }
+
+      } else {
+        console.log('checking operand literal data type');
+        const allowedData = ["string", "number", "boolean"];
+        let matchedDataType;
+        for (const datatype of allowedData) {
+          console.log('checking ', datatype, ' accepted tokens...');
+          if (state.allowedTokensInExpr[datatype].includes(operand.token)) {
+            console.log('matched ', operand.token, ' to ', datatype);
+            matchedDataType = datatype;
+            break;
+          }
+          console.log('noting matched');
+        }
+        return matchedDataType;
+      }
+    },
+    async CHECK_EXPRESSION({ state, commit, dispatch }, { starting_index, terminating_symbol, datatype, scope }) {
+      try {
+        let index = starting_index;
+        let N = state.tokenStream.length;
+        let current = state.tokenStream[index];
+        let next;
+
+        let parenCounter = 0
+        let isArr = false;
+        let isArr2D = false;
+        let stop = false;
+        let data_type = datatype;
+
+        if (data_type === 'any') {
+          console.log('any data type found on expr');
+          let checkOperand = current;
+          if (checkOperand.lexeme === '(') {
+            let innerIndex = index;
+            while (checkOperand.lexeme === '(') {
+              checkOperand = state.tokenStream[innerIndex];
+              innerIndex += 1;
+            }
+          }
+          console.log('checkOperand: ', checkOperand);
+
+          let basisDataType = await dispatch("CHECK_OPERAND_TYPE", {
+            operand: checkOperand
+          });
+
+          console.log('operand data type: ', basisDataType);
+
+          if (!basisDataType) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `cannot infer type of [ ${checkOperand.lexeme} ]`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+
+          } else {
+            data_type = basisDataType;
+          }
+        }
+
+        console.log('expression data type: ', data_type);
+
+        while(!stop) {
+          console.log("CHECK EXPR: ", current);
+          console.log('is expr operand goods: ', state.allowedTokensInExpr[data_type].includes(current.token));
+
+          //terminating condition
+          if (!parenCounter && terminating_symbol.includes(current.lexeme)) {
+            console.log('teminating the expr');
+            // index += 1;
+            stop = true;
+          }
+          // if opening paren is encountered, record it
+          else if (current.lexeme === '(') {
+            parenCounter += 1;
+            index += 1;
+          }
+          // if the closing paren is encountered,
+          else if (current.lexeme === ')' && parenCounter) {
+            parenCounter -= 1;
+            index += 1;
+          }
+
+          // check content of the id
+          else if (current.token.includes('id-')) {
+            console.log("id encountered");
+            const { next_index } = await dispatch("CHECK_ID", {
+              starting_index: index,
+              data_type: data_type,
+              terminating_symbol: [...state.stoppers],
+              scope: scope,
+            });
+
+            if (!next_index) {
+              return { next_index: null, result: false, isArr: false, isArr2D: false };
+            }
+
+            index = next_index;
+            console.log('id check finish: ', state.tokenStream[index]);
+          }
+
+          // for input statement assignment
+          else if (current.lexeme === 'water' && data_type !== 'string') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `water() returns a string literal`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+
+          } else if (current.lexeme === 'water' && data_type === 'string') {
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'string',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-water-paramter',
+                message: `water() only accepts string valued literals, identifier, or expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            return {
+              next_index: next_index, result: true, isArr, isArr2D
+            }
+          }
+
+          // check for num type cast functions
+          else if (current.lexeme === 'num' && !isExprConditional) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-type-cast-in-expr',
+              message: `num() typecast function cannot be used in a ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          } else if (current.lexeme === 'num' && next.lexeme === '(') {
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'string',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-num-cast-param',
+                message: `num() typecast function only accepts string valued literal, indentifier, or expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            index = next_index;
+          }
+
+          // check for str type cast functions
+          else if (current.lexeme === 'str' && data_type !== 'string') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-type-cast-in-expr',
+              message: `str() typecast function cannot be used in a ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          } else if (current.lexeme === 'str' && next.lexeme === '(') {
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'number',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-str-cast-param',
+                message: `str() typecast function only accepts number or boolean valued literal, indentifier, or expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            index = next_index;
+          }
+
+          // check for bol type cast functions
+          else if (current.lexeme === 'bol' && data_type !== 'number' && data_type !== 'boolean') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-type-cast-in-expr',
+              message: `bol() typecast function cannot be used in a ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          } else if (current.lexeme === 'str' && next.lexeme === '(') {
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'any',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-bol-cast-param',
+                message: `bol() typecast function should have a consistent data type value in its parameter`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            index = next_index;
+          }
+
+
+
+          // check if the operand is legit
+          else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
+            console.log('invalid token');
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `[ ${current.lexeme} ] is not allowed in ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          }
+
+          else {
+            index += 1;
+            console.log('no case to hold')
+          }
+
+          current = state.tokenStream[index];
+          next = index + 1 !== N ? state.tokenStream[index + 1] : { lexeme: '', token: '', col: 0, line: 0 };
+        }
+
+        console.log("expression is correct");
+        return {
+          next_index: index, result: true, isArr, isArr2D
+        }
+      } catch (err) {
+        return {
+          next_index: null, result: false, isArr: false, isArr2D: false
+        }
       }
     },
     async CHECK_ID_EXPRESSION({ state, commit, dispatch }, { starting_index, scope, terminating_symbol }) {
@@ -1550,7 +1389,7 @@ export default {
         if (current.token.includes('id-') && next.lexeme === '[') {
           console.log('id expr is an array access');
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
-          idToAssign = id;
+          idToAssign = {...id};
 
           if (!id) {
             commit("ADD_ERROR", {
@@ -1582,7 +1421,7 @@ export default {
           index += 2;
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
             starting_index: index,
-            data_type: 'number',
+            datatype: 'number',
             terminating_symbol: [']'],
             scope: scope
           });
@@ -1619,7 +1458,7 @@ export default {
             index += 1
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
-              data_type: 'number',
+              datatype: 'number',
               terminating_symbol: [']'],
               scope: scope
             });
@@ -1761,7 +1600,7 @@ export default {
             console.log('property is an array: ', state.tokenStream[index]);
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
-              data_type: 'number',
+              datatype: 'number',
               terminating_symbol: [']'],
               scope: scope
             });
@@ -1800,7 +1639,7 @@ export default {
               console.log('checking 2d arr expr', state.tokenStream[index].lexeme);
               const { next_index } = await dispatch("CHECK_EXPRESSION", {
                 starting_index: index,
-                data_type: 'number',
+                datatype: 'number',
                 terminating_symbol: [']'],
                 scope: scope
               });
@@ -1840,6 +1679,38 @@ export default {
         //     result: false
         //   };
         // }
+        else if (current.token.includes('id-') && (next.lexeme === '++' || next.lexeme === '--')) {
+          console.log('unary expresion encountered');
+          const id = state.declaredIDs.finc(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          if (!id) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'undeclared-variable',
+              message: `Undeclared variable -> [ ${current.lexeme} ]`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null,
+              result: false
+            };
+          } else if (id && id.data_type !== 'number') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-unary-usage',
+              message: `[ ${id.name} ] does not hold a numerical value`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null,
+              result: false
+            };
+          }
+
+          data_type = id.data_type;
+          index += 2;
+        }
         else if (current.token.includes('id-') && next.lexeme !== '.' && next.lexeme !== '[') {
           console.log('id expr is an id only');
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
@@ -1902,10 +1773,11 @@ export default {
 
         }
         else if (current.lexeme === '=') {
+          console.log("id before =", idToAssign);
           index += 1;
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
             starting_index: index,
-            data_type: data_type,
+            datatype: data_type,
             terminating_symbol: [';'],
             scope: scope
           });
@@ -1914,7 +1786,7 @@ export default {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-variable-assignment',
-              message: `value being assigned to [ ${idToAssign.name}${accessProp ? '.' + accessProp.name : ''} ] is not valid`,
+              message: `value being assigned to [ ${state.tokenStream[index - 2].lexeme}${accessProp ? '.' + accessProp.name : ''} ] is not valid`,
               line: current.line,
               col: current.col
             });
@@ -1946,6 +1818,150 @@ export default {
         next_index: index,
         result: true
       };
+    },
+    async CHECK_CONDITIONALS({ state, commit, dispatch }, { starting_index, scope }) {
+      let index = starting_index;
+      let current = state.tokenStream[index];
+      let next = state.tokenStream[index + 1];
+
+      if (current.lexeme === 'if' || current.lexeme === 'elif' || current.lexeme === 'during') {
+        index += 2;
+        const { next_index } = await dispatch("CHECK_EXPRESSION", {
+          starting_index: index,
+          datatype: 'boolean',
+          terminating_symbol: [')', '{'],
+          scope: scope,
+        });
+
+        if (!next_index) {
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'invalid-conditional',
+            message: `invalid conditional statement`,
+            line: current.line,
+            col: current.col
+          });
+          return { next_index: null, result: false }
+        }
+
+        return {
+          next_index,
+          result: true
+        }
+
+      } else if (current.lexeme === 'cycle') {
+        index += 2; // proceed to the initialization part
+        current = state.tokenStream[index];
+
+        if (current.token.includes('id-')) {
+          const { next_index } = await dispatch("CHECK_ID_EXPRESSION", {
+            starting_index: index,
+            terminating_symbol: [';'],
+            scope: scope
+          });
+
+          if (!next_index) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-loop-initialization',
+              message: `loop initialization statement is invalid`,
+              line: current.line,
+              col: current.col
+            });
+            return { next_index: null, result: false }
+          }
+
+          index += next_index;
+
+        } else if (state.allowedDataTypes.includes(current.token)) {
+          next = state.tokenStream[index + 1];
+          const id = {
+            data_type: current.token,
+            name: next.lexeme,
+            isArr: false,
+            isArr2D: false,
+            isFunc: false,
+            funcParams: [],
+            isConst: false,
+            isConstWithVal: false,
+            constDataAssigned: '',
+            scope: scope
+          };
+
+          index += 3;
+          const { next_index } = await dispatch("CHECK_EXPRESSION", {
+            starting_index: index,
+            datatype: id.data_type,
+            terminating_symbol: [';'],
+            scope: scope
+          });
+
+          if (!next_index) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-loop-initialization',
+              message: `loop initialization statement is invalid`,
+              line: current.line,
+              col: current.col
+            });
+            return { next_index: null, result: false }
+          }
+
+          index = next_index + 1;
+          state.declaredIDs.push(id)
+          console.log("loop init pushed", state.declaredIDs);
+        }
+
+        // check expression
+        console.log("evaluating loop condition")
+        const exprResult = await dispatch("CHECK_EXPRESSION", {
+          starting_index: index,
+          datatype: 'boolean',
+          scope: scope,
+          terminating_symbol: [';']
+        })
+
+        if (!exprResult.next_index) {
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'invalid-loop-condition',
+            message: `loop conditional statement is invalid`,
+            line: current.line,
+            col: current.col
+          });
+          return { next_index: null, result: false }
+        }
+
+        index = exprResult.next_index + 1;
+
+        // check count expression
+        console.log('evaluating count expression')
+        const countExprResult = await dispatch("CHECK_EXPRESSION", {
+          starting_index: index,
+          datatype: 'number',
+          scope: scope,
+          terminating_symbol: [')']
+        });
+
+        if (!countExprResult.next_index) {
+          commit("ADD_ERROR", {
+            type: 'SEM',
+            code: 'invalid-loop-count-expression',
+            message: `loop count expression is invalid`,
+            line: current.line,
+            col: current.col
+          });
+          return { next_index: null, result: false }
+        }
+
+        index = countExprResult.next_index;
+
+        return {
+          next_index: index,
+          result: true
+        }
+      }
+
     }
   }
 }

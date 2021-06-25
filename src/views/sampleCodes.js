@@ -1,12 +1,23 @@
-export const code1 = `
-number b = 2 + (21 / 3);
+export const code1 = `number b = 2 + (21 / 3);
 number grades = [90, 88, 90, 87, 85];
 stone name = "miggy";
 
 number N = 5;
 
+string enteredName = water("What is your name?: ");
+
+if (grades[0] >= 91) {
+  carve("excellent grade");
+
+} elif (grades[0] >= 85 && grades[0] <= 90) {
+  carve("good grade");
+
+} else {
+  carve("better luck next time");
+}
+
 object subj1 = {
-  string name: "cs elective",
+  string name: enteredName,
   number grade: 1.00,
 };
 
@@ -24,11 +35,14 @@ number average() {
   return sum2 / N;
 }
 
+
 cycle (number index = 0; index < N; index++) {
   carve(grades[index]);
 }
 
 number anotherIndex = 0;
+
+anotherIndex = 1 + 2;
 
 during(anotherIndex < N) {
   carve(grades[anotherIndex]);
@@ -114,18 +128,11 @@ object miggy = {
 `;
 
 export const code3 = `
-number grades = [89 + 1, 90, 91, 92, 79, id];
-
-if (grades[0] >= 90) {
-  carve("nice grades!");
-} elif ((grades[0] >= 80) && (grades[0] <= 89)) {
-  carve("still nice though...");
-} else {
-  number N = size(grades);
-  number index = 0;
-  during(index < N) {
-    carve("GRADE " + str(index + 1) + ": " + grades[index]);
-    index++;
-  }
-}
+number arr = [2, 3, 1];
+number b = [12];
+number a = arr[2 + 23 + (2 / 2) + b[0]];
+number grades = [(89 + 90 + (91 + (91 / 2))) + 1, 90, [91, 92], 79];
+string names = ["waw", "galing", ("galing" + "ano" + ("ahh" + ("ehh" + "nays")))];
+string name = "miggy";
+boolean test = "nays" != "sakto";
 `;
