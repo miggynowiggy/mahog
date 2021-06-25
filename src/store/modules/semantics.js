@@ -272,21 +272,50 @@ export default {
               }
 
               else if (current.lexeme === ':') {
-                const { next_index, isArr, isArr2D } = await dispatch("CHECK_EXPRESSION", {
-                  starting_index: index + 1,
-                  datatype: prop.data_type,
-                  terminating_symbol: [','],
-                  scope: functionEncountered.name
-                });
+                let result;
+                if (tokenStreamCopy[index + 1].lexeme === '[') {
+                  result = await dispatch("CHECK_EXPRESSION", {
+                    starting_index: index + 1,
+                    datatype: prop.data_type,
+                    terminating_symbol: [']', ','],
+                    scope: functionEncountered.name
+                  });
 
-                if (!next_index) {
-                  stop = true;
-                  return;
+                  if (!result.next_index) {
+                    commit("ADD_ERROR", {
+                      type: 'SEM',
+                      code: 'invalid-object-property-assignment',
+                      message: `property value does not match the data type of the property`,
+                      line: current.line,
+                      col: current.col
+                    });
+                    stop = true;
+                    return;
+                  }
+                } else {
+                  result = await dispatch("CHECK_EXPRESSION", {
+                    starting_index: index + 1,
+                    datatype: prop.data_type,
+                    terminating_symbol: [','],
+                    scope: functionEncountered.name
+                  });
+
+                  if (!result.next_index) {
+                    commit("ADD_ERROR", {
+                      type: 'SEM',
+                      code: 'invalid-object-property-assignment',
+                      message: `property value does not match the data type of the property`,
+                      line: current.line,
+                      col: current.col
+                    });
+                    stop = true;
+                    return;
+                  }
                 }
 
-                index = next_index;
-                prop.isArr = isArr;
-                prop.isArr2D = isArr2D;
+                index = result.next_index;
+                prop.isArr = result.isArr;
+                prop.isArr2D = result.isArr2D;
               }
 
               else if (current.lexeme === ',') {
@@ -1338,7 +1367,123 @@ export default {
             index = next_index;
           }
 
+          // size function checking
+          else if (current.lexeme === 'size' && data_type === 'string') {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `[ ${current.lexeme} ] is not allowed in ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
 
+          } else if (current.lexeme === 'size' && next.lexeme === '(') {
+            index += 2;
+            const operand = state.tokenStream[index];
+            if (operand.token.includes('id-')) {
+              const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
+              if (!id) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'undeclared-variable',
+                  message: `Undeclared variable -> [ ${operand.token} ]`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              } else if (id && !id.isArr && id.data_type !== 'string') {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-size-func-param',
+                  message: `size() function only accepts an array literal or a string expression`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              } else {
+                const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                  starting_index: index,
+                  datatype: 'string',
+                  terminating_symbol: [')', [...state.stoppers]],
+                  scope: scope
+                });
+
+                if (!next_index) {
+                  commit("ADD_ERROR", {
+                    type: 'SEM',
+                    code: 'invalid-size-func-param',
+                    message: `size() function only accepts an array literal or a string expression`,
+                    line: current.line,
+                    col: current.col
+                  });
+                  stop = true;
+                  return {
+                    next_index: null, result: false, isArr, isArr2D
+                  }
+                }
+
+                index = next_index;
+              }
+            } else if (operand.lexeme === '[') {
+              const { next_index } = await dispatch("CHECK_ARR_EXPRESSION", {
+                starting_index: index,
+                datatype: 'any',
+                terminating_symbol: [')'],
+                scope: scope
+              });
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-size-func-param',
+                  message: `size() function only accepts an array literal or a string expression`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              }
+
+              index = next_index;
+            } else if (operand.token === 'stringLit') {
+              const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                starting_index: index,
+                datatype: 'string',
+                terminating_symbol: [')'],
+                scope: scope
+              });
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-size-func-param',
+                  message: `size() function only accepts an array literal or a string expression`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              }
+
+              index = next_index;
+            } else {
+              index += 1;
+            }
+          }
 
           // check if the operand is legit
           else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
