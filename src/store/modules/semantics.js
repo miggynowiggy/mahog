@@ -573,6 +573,22 @@ export default {
             return { next_index: null, result: false };
           }
 
+          //check if the ID has an allowed unary
+          else if (id && (next.lexeme === '++' || next.lexeme === '--')) {
+            if (id.data_type !== 'number' && id.data_type !== 'boolean') {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-unary-usage',
+                message: `variable -> [ ${id.name} ] does not contain a numeric number for unary operation`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
+            }
+            index += 2;
+            return { next_index: index, result: true };
+          }
+
           // check if the ID is an array access
           else if (id && next.lexeme === '[') {
             console.log('id is array access', id);
