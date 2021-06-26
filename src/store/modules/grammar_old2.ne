@@ -202,6 +202,9 @@ num_choices
   -> %assign_only_op num_values %terminator
   | function_dec
   | %terminator
+  | %unary %terminator
+  | %add_assign_op init_expressions %terminator
+  | assign_operators init_expressions %terminator
   | null
 
 num_values
@@ -340,6 +343,7 @@ init_expressions
 
 init_expr_add
 -> operator init_expressions
+| %unary
 | null
 
 init_optional_nega
