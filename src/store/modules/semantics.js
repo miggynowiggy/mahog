@@ -20,7 +20,7 @@ export default {
         'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement',
         'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp', 'moduloAssignOp'
       ],
-      "string": ["addOp", "addAssignOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma', 'str'],
+      "string": ["addOp", "addAssignOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma', 'str', 'notEqualOp', 'equalToOp'],
       "boolean": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
