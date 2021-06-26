@@ -35,8 +35,10 @@ number average() {
   return sum2 / N;
 }
 
+average();
+number strs = sum(2, 3, 5, 4);
 
-cycle (number index = 0; index < N; index++) {
+cycle (number index = 0; index + strs < N; index++) {
   carve(grades[index]);
 }
 
@@ -128,11 +130,39 @@ object miggy = {
 `;
 
 export const code3 = `
-number arr = [2, 3, 1];
-number b = [12];
-number a = arr[2 + 23 + (2 / 2) + b[0]];
-number grades = [(89 + 90 + (91 + (91 / 2))) + 1, 90, [91, 92], 79];
-string names = ["waw", "galing", ("galing" + "ano" + ("ahh" + ("ehh" + "nays")))];
-string name = "miggy";
-boolean test = "nays" != "sakto";
+number num1;
+number orig;
+number rev;
+number rem;
+
+string response = water("Enter a number: ");
+orig = num(response);
+num1 = num(response);
+
+number myunc(number x, number n){
+  carve("Hello world");
+  return x + n;
+}
+
+myunc(1,2);
+
+during(num1 > 0) {
+  rem = num1 % 10;
+  rev = rev * ~10 + ~rem + rem;
+  num1 = num1 / 10;
+}
+
+if (trim(orig, 1) == rev) {
+  carve("Reverse is equal to original");
+}
+elif ("" + "") {
+  carve("Reverse is equal to original");
+}
+else {
+  carve("Reverse is not equal to original");
+}
+
+cycle(number i = 0; i < 10; i++) {
+  carve("grades");
+}
 `;

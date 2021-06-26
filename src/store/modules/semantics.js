@@ -16,7 +16,7 @@ export default {
       "number": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
-        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit', 'size', 'num',
+        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negaNumLit', 'size', 'trim', 'num', 'bol',
         'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement',
         'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp', 'moduloAssignOp'
       ],
@@ -24,8 +24,8 @@ export default {
       "boolean": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
-        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit',
-        'floatNumLit', 'negaFloatNumLit', 'stringLit', 'comma', 'LSqr', 'RSqr',
+        'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negaNumLit', 'num', 'bol',
+        'floatNumLit', 'negaFloatNumLit', 'stringLit', 'comma', 'LSqr', 'RSqr', 'size', 'trim',
         'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp', 'moduloAssignOp'
       ]
     }
@@ -131,7 +131,7 @@ export default {
                     isArr2D: false,
                     isObj: false,
                     properties: [],
-                    isValueDec: false
+                    isValueDec: true
                   });
                   param = { data_type: '', name: '', scope: '' };
                 }
@@ -148,6 +148,7 @@ export default {
 
               id.funcParams = funcParams.filter(p => p.name);
               id.scope = 'global';
+              id.isValueDec = true;
               console.log('pushing func: ', id);
               functionEncountered = id;
               state.declaredIDs.push(id);
@@ -211,6 +212,7 @@ export default {
             // for variable declaration with no values
             else if (tokenStreamCopy[index + 2].lexeme === ';') {
               id.scope = functionEncountered.name;
+              id.isValueDec = false;
               state.declaredIDs.push(id);
               console.log('declared id: ', state.declaredIDs);
               index += 3;
@@ -512,14 +514,17 @@ export default {
         data_type: initialDataType
       }
     },
-    async CHECK_ID ({ state, commit, dispatch }, { starting_index, data_type, terminating_symbol, scope }) {
+    async CHECK_ID ({ state, commit, dispatch }, { starting_index, datatype, terminating_symbol, scope }) {
       const reservedMethods = ['atPos', 'atChar', 'absorb', 'insert', 'uproot'];
       let index = starting_index;
       let current = state.tokenStream[index];
       let next = state.tokenStream[index + 1];
       let stop = false;
+      let data_type = datatype;
 
-      const isExprConditional = data_type === 'number' || data_type === 'boolean';
+      if (datatype === 'boolean') {
+        data_type = 'number';
+      }
 
       while (!stop) {
         // just double check if the id is id
@@ -536,7 +541,7 @@ export default {
             });
             return { next_index: null, result: false };
           }
-          else if (id && !id.isValueDec) {
+          else if (id && !id.isFunc && !id.isValueDec) {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-variable-value',
@@ -550,11 +555,12 @@ export default {
             console.log('any data type encountered');
             return { next_index: index + 1, result: true, data_type: id.data_type }
           }
-          else if (id && !id.isConst && !isExprConditional && id.data_type !== data_type && next.lexeme !== '.') {
+          else if (id && !id.isConst && id.data_type !== data_type && next.lexeme !== '.') {
+            console.log('error here');
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-variable-value',
-              message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
+              message: `variable -> [ ${id.name} ] does not contain a ${datatype} value`,
               line: current.line,
               col: current.col
             });
@@ -566,7 +572,7 @@ export default {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-variable-value',
-              message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
+              message: `variable -> [ ${id.name} ] does not contain a ${datatype} value`,
               line: current.line,
               col: current.col
             });
@@ -717,7 +723,7 @@ export default {
                 commit("ADD_ERROR", {
                   type: 'SEM',
                   code: 'value-data-type-mismatch',
-                  message: `[ ${id.name}.${prop.name} ] contains a non-${data_type} value`,
+                  message: `[ ${id.name}.${prop.name} ] contains a non-${datatype} value`,
                   line: current.line,
                   col: current.col
                 });
@@ -979,7 +985,6 @@ export default {
               result: true
             };
           }
-
         }
         else if (terminating_symbol.include(current.token)) {
           stop = true;
@@ -1013,6 +1018,10 @@ export default {
       let isArr2D = false;
       let stop = false;
       let data_type = datatype;
+
+      if (datatype === 'boolean') {
+        data_type = 'number'
+      }
 
       isArr = true;
       index += 1; //advance to the first element of the array
@@ -1077,32 +1086,29 @@ export default {
           };
         }
         else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
-          // const { next_index } = await dispatch("CHECK_EXPRESSION", {
-          //   starting_index: index,
-          //   datatype: data_type,
-          //   scope: scope,
-          //   terminating_symbol: [',']
-          // });
-          // console.log('finished arr element eval: ', next_index);
-
-          // if (!next_index) {
-          //   return {
-          //     next_index: null, result: false, isArr, isArr2D
-          //   }
-          // }
-
-          // index = next_index;
-          commit("ADD_ERROR", {
-            type: 'SEM',
-            code: 'invalid-expr-value',
-            message: `[ ${current.lexeme} ] is not allowed in ${data_type} expression`,
-            line: current.line,
-            col: current.col
+          const { next_index } = await dispatch("CHECK_EXPRESSION", {
+            starting_index: index,
+            datatype: data_type,
+            scope: scope,
+            terminating_symbol: [',']
           });
-          stop = true;
-          return {
-            next_index: null, result: false, isArr, isArr2D
+          console.log('finished arr element eval: ', next_index);
+
+          if (!next_index) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `[ ${current.lexeme} ] is not allowed in ${datatype} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr: false, isArr2D: false
+            }
           }
+
+          index = next_index;
         } else {
           console.log('checking array element no case');
           index += 1;
@@ -1146,7 +1152,7 @@ export default {
             matchedDataType = datatype;
             break;
           }
-          console.log('noting matched');
+          console.log('nothing matched');
         }
         return matchedDataType;
       }
@@ -1163,6 +1169,10 @@ export default {
         let isArr2D = false;
         let stop = false;
         let data_type = datatype;
+
+        if (datatype === 'boolean') {
+          data_type = 'number';
+        }
 
         if (data_type === 'any') {
           console.log('any data type found on expr');
@@ -1227,7 +1237,7 @@ export default {
             console.log("id encountered");
             const { next_index } = await dispatch("CHECK_ID", {
               starting_index: index,
-              data_type: data_type,
+              datatype: data_type,
               terminating_symbol: [...state.stoppers],
               scope: scope,
             });
@@ -1283,25 +1293,28 @@ export default {
           }
 
           // check for num type cast functions
-          else if (current.lexeme === 'num' && !isExprConditional) {
-            console.log("num typecast error")
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-type-cast-in-expr',
-              message: `num() typecast function cannot be used in a ${data_type} expression`,
-              line: current.line,
-              col: current.col
-            });
-            stop = true;
-            return {
-              next_index: null, result: false, isArr, isArr2D
-            }
-          } else if (current.lexeme === 'num' && next.lexeme === '(') {
+          else if (current.token === 'num') {
             console.log('checking num typecast')
+
+            if (data_type === 'string') {
+              console.log("num typecast error")
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-type-cast-in-expr',
+                message: `num() typecast function cannot be used in a ${data_type} expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
             index += 2;
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
-              datatype: 'string',
+              datatype: 'any',
               terminating_symbol: [')'],
               scope: scope
             });
@@ -1324,7 +1337,7 @@ export default {
           }
 
           // check for str type cast functions
-          else if (current.lexeme === 'str' && data_type !== 'string') {
+          else if (current.lexeme === 'str' && data_type !== 'number') {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-type-cast-in-expr',
@@ -1363,7 +1376,7 @@ export default {
           }
 
           // check for bol type cast functions
-          else if (current.lexeme === 'bol' && data_type !== 'number' && data_type !== 'boolean') {
+          else if (current.lexeme === 'bol' && data_type === 'string') {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-type-cast-in-expr',
@@ -1445,69 +1458,6 @@ export default {
 
               index = next_index;
 
-            //   // const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
-            //   // console.log('size func id: ', id);
-            //   // if (!id) {
-            //   //   commit("ADD_ERROR", {
-            //   //     type: 'SEM',
-            //   //     code: 'undeclared-variable',
-            //   //     message: `Undeclared variable -> [ ${operand.token} ]`,
-            //   //     line: current.line,
-            //   //     col: current.col
-            //   //   });
-            //   //   stop = true;
-            //   //   return {
-            //   //     next_index: null, result: false, isArr, isArr2D
-            //   //   }
-            //   // } else if (id && id.isConst && id.constDataAssigned !=='string') {
-            //   //   commit("ADD_ERROR", {
-            //   //     type: 'SEM',
-            //   //     code: 'invalid-size-func-param',
-            //   //     message: `size() function only accepts an array literal or a string expression`,
-            //   //     line: current.line,
-            //   //     col: current.col
-            //   //   });
-            //   //   stop = true;
-            //   //   return {
-            //   //     next_index: null, result: false, isArr, isArr2D
-            //   //   }
-            //   // }
-            //   // else if (id && !id.isArr && id.data_type !== 'string') {
-            //   //   commit("ADD_ERROR", {
-            //   //     type: 'SEM',
-            //   //     code: 'invalid-size-func-param',
-            //   //     message: `size() function only accepts an array literal or a string expression`,
-            //   //     line: current.line,
-            //   //     col: current.col
-            //   //   });
-            //   //   stop = true;
-            //   //   return {
-            //   //     next_index: null, result: false, isArr, isArr2D
-            //   //   }
-            //   // } else {
-            //   //   const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            //   //     starting_index: index,
-            //   //     datatype: 'any',
-            //   //     terminating_symbol: [')', [...state.stoppers]],
-            //   //     scope: scope
-            //   //   });
-
-            //   //   if (!next_index) {
-            //   //     commit("ADD_ERROR", {
-            //   //       type: 'SEM',
-            //   //       code: 'invalid-size-func-param',
-            //   //       message: `size() function only accepts an array literal or a string expression`,
-            //   //       line: current.line,
-            //   //       col: current.col
-            //   //     });
-            //   //     stop = true;
-            //   //     return {
-            //   //       next_index: null, result: false, isArr, isArr2D
-            //   //     }
-            //   //   }
-
-            //   //   index = next_index;
-            //   // }
             } else if (operand.lexeme === '[') {
               const { next_index } = await dispatch("CHECK_ARR_EXPRESSION", {
                 starting_index: index,
@@ -1621,6 +1571,53 @@ export default {
             stop = true;
             return {
               next_index: null, result: false, isArr, isArr2D
+            }
+          }
+
+          // if negative symbol is used
+          else if (current.lexeme === '~') {
+            console.log('checking nega sign for ' + data_type + ' expr');
+            if (data_type === 'string') {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-nega-sign-usage',
+                message: `negative symbol is only allowed in a numeric expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            if (next.token.includes('id-')) {
+              console.log('checking id if allowed with a nega sign');
+              index += 1;
+              const { next_index } = await dispatch("CHECK_ID", {
+                starting_index: index,
+                datatype: 'number',
+                terminating_symbol: [...state.stoppers],
+                scope: scope
+              });
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-nega-sign-usage',
+                  message: `negative symbol is only allowed in a variable containing numeric value`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              }
+
+              index = next_index;
+            } else {
+              index += 1;
             }
           }
 
@@ -1766,9 +1763,11 @@ export default {
           }
           data_type = id.data_type;
         }
+
         // check array methods code
         else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2].lexeme)) {
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          idToAssign = {...id};
 
           if (!id) {
             commit("ADD_ERROR", {
@@ -1799,12 +1798,14 @@ export default {
 
           index += 4;
           console.log('arr method encountered: ', state.tokenStream[index].lexeme);
+          return { next_index: index, result: true };
         }
         // check if the id is an object access
         else if (current.token.includes('id-') && next.lexeme === '.') {
           console.log('id expr is an object access');
           let propToAssign;
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          idToAssign = {...id};
 
           if (!id) {
             commit("ADD_ERROR", {
@@ -1948,25 +1949,121 @@ export default {
           }
 
           data_type = prop.data_type;
-          idToAssign = id;
+          idToAssign = {...id};
           accessProp = propToAssign;
         }
-        // else if (current.token.includes('id-') && next.lexeme === '(') {
-        //   commit("ADD_ERROR", {
-        //     type: 'SEM',
-        //     code: 'invalid-variable-assignment',
-        //     message: `value is being assigned to a function call`,
-        //     line: current.line,
-        //     col: current.col
-        //   });
-        //   return {
-        //     next_index: null,
-        //     result: false
-        //   };
-        // }
+        else if (current.token.includes('id-') && next.lexeme === '(') {
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          console.log('function call: ', id);
+          idToAssign = {...id};
+
+          if (!id) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: `undeclared-variable`,
+              message: `undeclared variable -> [ ${current.lexeme} ]`,
+              line: current.line,
+              col: current.col
+            });
+            return { next: null, result: false }
+          }
+          else if (id && !id.isFunc) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-function-call',
+              message: `[ ${id.name} ] is not a function`,
+              line: current.line,
+              col: current.col
+            });
+            return { next: null, result: false }
+
+          } else if (id && id.isFunc) {
+            index += 2;
+            console.log("processing parameters: ", state.tokenStream[index]);
+            let paramList = [];
+            let param = { indexes: [], terminating_symbol: '' };
+            let parenEncounter = 0;
+            current = state.tokenStream[index];
+            while (true) {
+              if (current.lexeme === '(') {
+                parenEncounter += 1;
+                index += 1;
+                param.indexes.push(index)
+                current = state.tokenStream[index];
+              } else if (parenEncounter && current.lexeme === ')') {
+                parenEncounter -= 1;
+                index += 1;
+                param.indexes.push(index);
+                current = state.tokenStream[index];
+              } else if (!parenEncounter && current.lexeme === ',') {
+                param.terminating_symbol = current.lexeme;
+                paramList.push({...param });
+                param.indexes = [];
+                param.terminating_symbol = '';
+                index += 1;
+                current = state.tokenStream[index];
+              } else if (!parenEncounter && current.lexeme === ')') {
+                param.terminating_symbol = current.lexeme;
+                paramList.push({...param });
+                param.indexes = [];
+                param.terminating_symbol = '';
+                index += 1;
+                break;
+              } else {
+                param.indexes.push(index);
+                index += 1;
+                current = state.tokenStream[index];
+              }
+            }
+
+            paramList = paramList.filter(p => p.indexes.length);
+
+            console.log('gathered params: ', paramList);
+
+            if (id.funcParams.length !== paramList.length) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-function-call',
+                message: `[ ${id.name} ] was expecting ${id.funcParams.length}, but supplied ${paramList.length}`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+
+            for (let loopIndex = 0; loopIndex < paramList.length; loopIndex++) {
+              const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                starting_index: paramList[loopIndex].indexes[0],
+                datatype: id.funcParams[loopIndex].data_type,
+                terminating_symbol: [paramList[loopIndex].terminating_symbol],
+                scope: scope
+              });
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'value-data-type-mismatch',
+                  message: `Data type mismatch on function parameter [ ${id.parameters[loopIndex].name} ] of function [ ${id.name} ]`,
+                  line: current.line,
+                  col: current.col
+                });
+                return { next_index: null, result: false };
+              }
+
+              index = next_index;
+              console.log('param is valid');
+            }
+
+            console.log('next character: ', state.tokenStream[index]);
+            return { next_index: index, result: true };
+          }
+          return { next_index: index, result: true };
+        }
         else if (current.token.includes('id-') && (next.lexeme === '++' || next.lexeme === '--')) {
           console.log('unary expresion encountered');
-          const id = state.declaredIDs.finc(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
+          idToAssign = {...id};
+
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -1991,6 +2088,18 @@ export default {
               next_index: null,
               result: false
             };
+          } else if (id && !id.isValueDec) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-unary-usage',
+              message: `[ ${id.name} ] is not initialized with a value`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null,
+              result: false
+            };
           }
 
           data_type = id.data_type;
@@ -2000,6 +2109,7 @@ export default {
           console.log('id expr is an id only');
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           console.log(id, scope);
+
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -2013,7 +2123,10 @@ export default {
               result: false
             };
           }
-          else if (id && id.isObj) {
+
+          idToAssign = {...id};
+
+          if (id && id.isObj) {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-object-use',
@@ -2055,11 +2168,17 @@ export default {
 
           data_type = id.data_type;
           index += 1;
-
         }
         else if (allowedAssOp.includes(current.lexeme)) {
           console.log("id before =", idToAssign);
+          idToAssign.isValueDec = true;
+          const indexToChange = state.declaredIDs.findIndex(i => i.name === idToAssign.name);
+          state.declaredIDs[indexToChange] = {...idToAssign};
+          console.log('finished reading id expr: ', state.tokenStream[index]);
+          console.log('reassigning id: ', state.declaredIDs[indexToChange]);
+
           index += 1;
+
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
             starting_index: index,
             datatype: data_type,
@@ -2082,7 +2201,7 @@ export default {
           }
 
           index = next_index;
-          console.log('finished reading id expr: ', state.tokenStream[index]);
+
           return {
             next_index: index,
             result: true
@@ -2110,10 +2229,11 @@ export default {
       let next = state.tokenStream[index + 1];
 
       if (current.lexeme === 'if' || current.lexeme === 'elif' || current.lexeme === 'during') {
+        console.log('checking ' + current.lexeme + ' statement');
         index += 2;
         const { next_index } = await dispatch("CHECK_EXPRESSION", {
           starting_index: index,
-          datatype: 'boolean',
+          datatype: 'any',
           terminating_symbol: [')', '{'],
           scope: scope,
         });
@@ -2121,8 +2241,8 @@ export default {
         if (!next_index) {
           commit("ADD_ERROR", {
             type: 'SEM',
-            code: 'invalid-conditional',
-            message: `invalid conditional statement`,
+            code: `invalid-${current.lexeme}-condition`,
+            message: `invalid conditional statement in ${current.lexeme}`,
             line: current.line,
             col: current.col
           });
@@ -2135,6 +2255,7 @@ export default {
         }
 
       } else if (current.lexeme === 'cycle') {
+        console.log('checking cycle loop');
         index += 2; // proceed to the initialization part
         current = state.tokenStream[index];
 
@@ -2148,19 +2269,34 @@ export default {
           if (!next_index) {
             commit("ADD_ERROR", {
               type: 'SEM',
-              code: 'invalid-loop-initialization',
-              message: `loop initialization statement is invalid`,
+              code: 'invalid-cycle-loop-initialization',
+              message: `cycle loop initialization statement is invalid`,
               line: current.line,
               col: current.col
             });
             return { next_index: null, result: false }
           }
 
-          index += next_index;
+          index = next_index + 1;
 
         } else if (state.allowedDataTypes.includes(current.token)) {
           console.log('declaration encountered');
           next = state.tokenStream[index + 1];
+
+          if (next.token.includes('id-')) {
+            const idToDec = state.declaredIDs.find(i => i.name === next.lexeme && (i.scope === scope || i.scope === 'global'));
+            if (idToDec) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-cycle-loop-initialization',
+                message: `redeclared variable -> [ ${idToDec.name} ] in cycle loop initialization`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false }
+            }
+          }
+
           const id = {
             data_type: current.token,
             name: next.lexeme,
@@ -2187,8 +2323,8 @@ export default {
             if (!next_index) {
               commit("ADD_ERROR", {
                 type: 'SEM',
-                code: 'invalid-loop-initialization',
-                message: `loop initialization statement is invalid`,
+                code: 'invalid-cycle-loop-initialization',
+                message: `cycle loop initialization statement is invalid`,
                 line: current.line,
                 col: current.col
               });
@@ -2207,10 +2343,10 @@ export default {
         }
 
         // check expression
-        console.log("evaluating loop condition")
+        console.log("evaluating loop condition ", state.tokenStream.length, index);
         const exprResult = await dispatch("CHECK_EXPRESSION", {
           starting_index: index,
-          datatype: 'boolean',
+          datatype: 'any',
           scope: scope,
           terminating_symbol: [';']
         })
@@ -2218,8 +2354,8 @@ export default {
         if (!exprResult.next_index) {
           commit("ADD_ERROR", {
             type: 'SEM',
-            code: 'invalid-loop-condition',
-            message: `loop conditional statement is invalid`,
+            code: 'invalid-cycle-loop-condition',
+            message: `cycle loop conditional statement is invalid`,
             line: current.line,
             col: current.col
           });
@@ -2240,8 +2376,8 @@ export default {
         if (!countExprResult.next_index) {
           commit("ADD_ERROR", {
             type: 'SEM',
-            code: 'invalid-loop-count-expression',
-            message: `loop count expression is invalid`,
+            code: 'invalid-cycle-loop-count-expression',
+            message: `cycle loop count expression is invalid`,
             line: current.line,
             col: current.col
           });
@@ -2254,72 +2390,6 @@ export default {
           next_index: index,
           result: true
         }
-      }
-
-    },
-    async CHECK_SIZE({ state, commit, dispatch }, { starting_index, scope }) {
-      let index = starting_index;
-      let current = state.tokenStream[index];
-      let next = state.tokenStream[index + 1];
-      let stoppers = [...state.stoppers, ')'];
-
-      while(!stoppers.includes(current.lexeme)) {
-        if (current.lexeme === 'size') {
-          index += 1;
-        } else if (current.lexeme === '(') {
-          index += 1;
-        } else if (current.lexeme === ')') {
-          return {
-            next_index: index,
-            result: true
-          }
-        } else if (current.lexeme === '['){
-          const { next_index, isArr, isArr2D } = await dispatch("CHECK_ARR_EXPRESSION", {
-            starting_index: index,
-            datatype: 'any',
-            terminating_symbol: [')'],
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-size-func-param',
-              message: `size() function only accepts an array literal or a string expression`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null, result: false, isArr, isArr2D
-            }
-          }
-        }
-        else {
-          const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            starting_index: index,
-            datatype: 'any',
-            terminating_symbol: [')', [...state.stoppers]],
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-size-func-param',
-              message: `size() function only accepts an array literal or a string expression`,
-              line: current.line,
-              col: current.col
-            });
-            return {
-              next_index: null, result: false, isArr: false, isArr2D: false
-            }
-          }
-
-          index = next_index;
-          return { next_index, result: true, isArr: false, isArr2D: false }
-        }
-
-        current = state.tokenStream[index];
       }
     }
   }

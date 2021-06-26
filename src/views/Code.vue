@@ -200,7 +200,7 @@ export default {
   data() {
     const self = this;
     return {
-      code: code1,
+      code: code3,
       cmOptions: {
         tabSize: 2,
         theme: "mbo",
