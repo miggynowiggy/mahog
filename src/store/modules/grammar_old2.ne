@@ -378,6 +378,7 @@ index_arith_expressions
 
 index_arith_expr_add
   -> operator arith_expressions
+  | %unary
 
 index_arith_operand
   -> %num_lit
@@ -394,6 +395,7 @@ arith_expressions
 
 arith_expr_add
   -> operator arith_expressions
+  | %unary
   | null
 
 arith_operand
