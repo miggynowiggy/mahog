@@ -17,14 +17,16 @@ export default {
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
         'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit', 'size', 'num',
-        'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement'
+        'floatNumLit', 'negaFloatNumLit', 'comma', 'LSqr', 'RSqr', 'unary', 'increment', 'decrement',
+        'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp', 'moduloAssignOp'
       ],
-      "string": ["addOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma', 'str'],
+      "string": ["addOp", "addAssignOp", "stringLit", 'LParen', 'RParen', 'LSqr', 'RSqr', 'comma', 'str'],
       "boolean": [
         'greaterThanOp', 'lessThanOp', 'greaterThanEqualOp', 'lessThanEqualOp', 'notEqualOp',
         'equalToOp', 'notOp', 'andOp', 'orOp', 'addOp', 'subtractOp', 'multiplyOp', 'divideOp',
         'moduloOp', 'LParen', 'RParen', 'true', 'false', 'numLit', 'negNumLit',
-        'floatNumLit', 'negaFloatNumLit', 'stringLit', 'comma', 'LSqr', 'RSqr'
+        'floatNumLit', 'negaFloatNumLit', 'stringLit', 'comma', 'LSqr', 'RSqr',
+        'addAssignOp', 'subtractAssignOp', 'multiplyAssignOp', 'divideAssignOp', 'moduloAssignOp'
       ]
     }
   },
@@ -81,7 +83,8 @@ export default {
               isConst: false,
               isConstWithVal: false,
               constDataAssigned: '',
-              scope: ''
+              scope: '',
+              isValueDec: false
             };
 
             // for constant declaration
@@ -89,7 +92,7 @@ export default {
               console.log('getting constant declaration: ', current.lexeme, next.lexeme);
               id.isConst = true;
               if (tokenStreamCopy[index + 2].lexeme === '=') {
-                id.isConstWithVal = true;
+                id.isValueDec = true;
                 const { next_index, data_type } = await dispatch("CHECK_STONE_EXPRESSION", {
                   starting_index: index + 3,
                   scope: functionEncountered.name
@@ -97,7 +100,7 @@ export default {
                 id.constDataAssigned = data_type;
                 index = next_index;
               } else {
-                id.isConstWithVal = false;
+                id.isValueDec = false;
                 index += 1;
               }
               id.scope = functionEncountered.name;
@@ -127,7 +130,8 @@ export default {
                     isArr: false,
                     isArr2D: false,
                     isObj: false,
-                    properties: []
+                    properties: [],
+                    isValueDec: false
                   });
                   param = { data_type: '', name: '', scope: '' };
                 }
@@ -199,6 +203,7 @@ export default {
               id.isArr = result.isArr;
               id.isArr2D = result.isArr2D
               id.scope = functionEncountered.name;
+              id.isValueDec = true;
               state.declaredIDs.push(id);
               console.log('declared id: ', state.declaredIDs);
             }
@@ -250,7 +255,8 @@ export default {
               isArr: false,
               isObj: true,
               properties: [],
-              scope: functionEncountered.name
+              scope: functionEncountered.name,
+              isValueDec: true
             };
 
             index += 4;
@@ -525,6 +531,16 @@ export default {
               type: 'SEM',
               code: 'undeclared-variable',
               message: `undeclared variable -> [ ${current.lexeme} ]`,
+              line: current.line,
+              col: current.col
+            });
+            return { next_index: null, result: false };
+          }
+          else if (id && !id.isValueDec) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-variable-value',
+              message: `variable -> [ ${id.name} ] contains undefined value`,
               line: current.line,
               col: current.col
             });
@@ -1386,6 +1402,24 @@ export default {
 
           } else if (current.lexeme === 'size') {
             console.log('size function encountered');
+            const { next_index, isArr, isArr2D } = await dispatch("CHECK_SIZE", {
+              starting_index: index,
+              scope: scope,
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-size-func-param',
+                message: `size() function only accepts an array literal or a string expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
             index += 2;
             const operand = state.tokenStream[index];
             console.log('checking first operand');
@@ -1475,6 +1509,7 @@ export default {
               //   }
 
               //   index = next_index;
+              // }
             } else if (operand.lexeme === '[') {
               const { next_index } = await dispatch("CHECK_ARR_EXPRESSION", {
                 starting_index: index,
@@ -1527,6 +1562,70 @@ export default {
             }
           }
 
+          //check trim function
+          else if (current.lexeme === 'trim' && (data_type === 'number' || data_type === 'boolean')) {
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'number',
+              terminating_symbol: [','],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-trim-func-param',
+                message: `trim() function parameter 1 only accepts number literal or a number expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            index = next_index + 1;
+            console.log('checking second trim parameter', state.tokenStream[index]);
+            const trimparam2 = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'number',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!trimparam2.next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-trim-func-param',
+                message: `trim() function parameter 2 only accepts number literal or a number expression`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            index = trimparam2.next_index;
+
+          } else if (current.lexeme === 'trim' && (data_type !== 'number' && data_type !== 'boolean')) {
+            console.log('trim function error');
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-expr-value',
+              message: `[ ${current.lexeme} ] is not allowed in ${data_type} expression`,
+              line: current.line,
+              col: current.col
+            });
+            stop = true;
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          }
+
           // check if the operand is legit
           else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
             console.log('invalid token');
@@ -1566,6 +1665,7 @@ export default {
       let index = starting_index;
       let current = state.tokenStream[index];
       let next = state.tokenStream[index + 1];
+      let allowedAssOp = ['=', '+=', '-=', '*=', '/=', '%='];
 
       let data_type = null;
       let idToAssign = null;
@@ -1959,7 +2059,7 @@ export default {
           index += 1;
 
         }
-        else if (current.lexeme === '=') {
+        else if (allowedAssOp.includes(current.lexeme)) {
           console.log("id before =", idToAssign);
           index += 1;
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
@@ -2061,6 +2161,7 @@ export default {
           index += next_index;
 
         } else if (state.allowedDataTypes.includes(current.token)) {
+          console.log('declaration encountered');
           next = state.tokenStream[index + 1];
           const id = {
             data_type: current.token,
@@ -2072,31 +2173,39 @@ export default {
             isConst: false,
             isConstWithVal: false,
             constDataAssigned: '',
-            scope: scope
+            scope: scope,
+            isValueDec: false
           };
 
           index += 3;
-          const { next_index } = await dispatch("CHECK_EXPRESSION", {
-            starting_index: index,
-            datatype: id.data_type,
-            terminating_symbol: [';'],
-            scope: scope
-          });
-
-          if (!next_index) {
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-loop-initialization',
-              message: `loop initialization statement is invalid`,
-              line: current.line,
-              col: current.col
+          if (state.tokenStream[index - 1].lexeme === '=') {
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: id.data_type,
+              terminating_symbol: [';'],
+              scope: scope
             });
-            return { next_index: null, result: false }
-          }
 
-          index = next_index + 1;
-          state.declaredIDs.push(id)
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-loop-initialization',
+                message: `loop initialization statement is invalid`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false }
+            }
+
+            index = next_index + 1;
+            id.isValueDec = true;
+          }
+          console.log('pushing array init dec: ', id);
+          state.declaredIDs.push({...id})
           console.log("loop init pushed", state.declaredIDs);
+        } else if (current.lexeme === ';') {
+          index += 1;
+          console.log("no init loop detected");
         }
 
         // check expression
@@ -2149,6 +2258,70 @@ export default {
         }
       }
 
+    },
+    async CHECK_SIZE({ state, commit, dispatch }, { starting_index, scope }) {
+      let index = starting_index;
+      let current = state.tokenStream[index];
+      let next = state.tokenStream[index + 1];
+      let stoppers = [...state.stoppers, ')'];
+
+      while(!stoppers.includes(current.lexeme)) {
+        if (current.lexeme === 'size') {
+          index += 1;
+          continue;
+        } else if (current.lexeme === '(') {
+          index += 1;
+          continue;
+        } else if (current.lexeme === ')') {
+          return {
+            next_index: index,
+            result: true
+          }
+        } else if (current.lexeme === '['){
+          const { next_index, isArr, isArr2D } = await dispatch("CHECK_ARR_EXPRESSION", {
+            starting_index: index,
+            datatype: 'any',
+            terminating_symbol: [')'],
+            scope: scope
+          });
+
+          if (!next_index) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-size-func-param',
+              message: `size() function only accepts an array literal or a string expression`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null, result: false, isArr, isArr2D
+            }
+          }
+        } else {
+          const { next_index } = await dispatch("CHECK_EXPRESSION", {
+            starting_index: index,
+            datatype: 'any',
+            terminating_symbol: [')', [...state.stoppers]],
+            scope: scope
+          });
+
+          if (!next_index) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-size-func-param',
+              message: `size() function only accepts an array literal or a string expression`,
+              line: current.line,
+              col: current.col
+            });
+            return {
+              next_index: null, result: false, isArr: false, isArr2D: false
+            }
+          }
+
+          index = next_index;
+          return { next_index, result: true, isArr: false, isArr2D: false }
+        }
+      }
     }
   }
 }

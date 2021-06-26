@@ -153,7 +153,7 @@ mixed_expressions
 optional_mixed_nega
   -> option_sign optional_expr
 
-optional_expr  
+optional_expr
   -> %bool_lit init_expr_add
   | ids mixed_adds
   | typecast_num init_expr_add
@@ -175,16 +175,24 @@ stringlit_choices_methods
 
 atPos_method_null_choices
   -> atChar_expr_add
-  | relate_op_bool init_expr_add_follow relate_string_add init_expr_add
+  | relate_op_bool atChar_operands string_bool_add
+
+string_bool_expr
+  -> atChar_operands string_bool_add
+
+string_bool_add
+  -> relate_op_bool string_bool_expr
+  | null
 
 mixed_adds
   -> %add_op mixed_expressions
-  | %subtract_op mixed_expressions
-  | %multiply_op mixed_expressions
-  | %divide_op mixed_expressions
-  | %modulo_op mixed_expressions
-  | relate_op mixed_expressions
-  | logical_op mixed_expressions
+  | %subtract_op init_expressions
+  | %multiply_op init_expressions
+  | %divide_op init_expressions
+  | %modulo_op init_expressions
+  | relate_op_num init_expressions
+  | relate_op_bool mixed_expressions
+  | logical_op init_expressions
   | null
 
 data_declare
@@ -330,12 +338,8 @@ init_expressions
 -> init_optional_nega init_operands init_expr_add
 | atChar_operands1 atChar_init init_expr_add
 
-init_expr_add_follow
-  -> init_optional_nega init_operands init_expr_add
-  | atChar_operands1 atChar_init_null init_expr_add
-
 init_expr_add
--> operator init_expr_add_follow
+-> operator init_expressions
 | null
 
 init_optional_nega
@@ -361,16 +365,7 @@ init_operands1
 
 atChar_init
   -> %period atChar_method
-  | relate_op_bool init_expr_add_follow relate_string_add
-
-atChar_init_null
-  -> %period atChar_method
-  | relate_op_bool init_expr_add_follow relate_string_add
-  | null
-
-relate_string_add
-  -> relate_op_bool init_expr_add_follow
-  | null
+  | relate_op_bool atChar_operands
 
 index_arith_expressions
   -> index_arith_operand arith_expr_add
@@ -450,16 +445,10 @@ str_operand
 
 str_operator
   -> arith_op {%id%}
-  | relate_op_num {%id%}
-  | logical_op {%id%}
 
 atChar_expr_add
--> str_operator atChar_expr_add_follow
+-> str_operator atChar_expressions
 | null
-
-atChar_expr_add_follow
-  -> atChar_expressions
-  | init_operands1 atChar_expr_add
 
 atChar_operands
 -> ids {%id%}
