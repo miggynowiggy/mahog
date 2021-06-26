@@ -202,6 +202,9 @@ num_choices
   -> %assign_only_op num_values %terminator
   | function_dec
   | %terminator
+  | %unary %terminator
+  | %add_assign_op init_expressions %terminator
+  | assign_operators init_expressions %terminator
   | null
 
 num_values
@@ -242,9 +245,9 @@ object_wrapper
   -> %L_curl object_content %R_curl
 
 object_content
-  -> %number_datatype %id %colon mixed_expressions %comma append_property
-  | %string_datatype %id %colon mixed_expressions %comma append_property
-  | %boolean_datatype %id %colon mixed_expressions %comma append_property
+  -> %number_datatype %id %colon num_values %comma append_property
+  | %string_datatype %id %colon str_values %comma append_property
+  | %boolean_datatype %id %colon num_values %comma append_property
 
 append_property
   -> object_content
@@ -340,6 +343,7 @@ init_expressions
 
 init_expr_add
 -> operator init_expressions
+| %unary
 | null
 
 init_optional_nega
