@@ -448,7 +448,7 @@ str_operand
   | %L_paren str_expressions %R_paren
 
 str_operator
-  -> arith_op {%id%}
+  -> %add_op {%id%}
 
 atChar_expr_add
 -> str_operator atChar_expressions

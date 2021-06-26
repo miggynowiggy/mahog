@@ -375,6 +375,10 @@ index_arith_expressions
   -> index_arith_operand arith_expr_add
   | %nega_num_lit index_arith_expr_add
   | float_numbers index_arith_expr_add
+  | option_sign %id
+
+option_sign_choices
+  -> option_negas arith_expr_add
 
 index_arith_expr_add
   -> operator arith_expressions
@@ -382,7 +386,6 @@ index_arith_expr_add
 
 index_arith_operand
   -> %num_lit
-  | option_sign option_negas
  #| typecast_num
  #| trim_function {%id%}
  #| size_function {%id%}
@@ -413,8 +416,7 @@ option_sign
   | null
 
 option_negas
-  -> ids {%id%}
-  | %L_paren arith_expressions %R_paren
+  -> %L_paren arith_expressions %R_paren
   | typecast_num
   | trim_function {%id%}
   | size_function {%id%}
@@ -450,7 +452,7 @@ str_operand
   | %L_paren str_expressions %R_paren
 
 str_operator
-  -> arith_op {%id%}
+  -> %add_op {%id%}
 
 atChar_expr_add
 -> str_operator atChar_expressions

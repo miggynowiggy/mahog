@@ -7,7 +7,7 @@
     "build": "yarn generate-grammar-old && vue-cli-service build",
     "lint": "vue-cli-service lint",
     "generate-grammar": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js",
-    "generate-grammar-old": "nearleyc ./src/store/modules/grammar_old2.ne -o ./src/store/modules/grammar.js"
+    "generate-grammar-old": "nearleyc ./src/store/modules/grammar.ne -o ./src/store/modules/grammar.js"
   },
   "dependencies": {
     "core-js": "^3.6.5",
