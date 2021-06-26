@@ -1418,24 +1418,6 @@ export default {
 
           } else if (current.lexeme === 'size') {
             console.log('size function encountered');
-            const { next_index, isArr, isArr2D } = await dispatch("CHECK_SIZE", {
-              starting_index: index,
-              scope: scope,
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-size-func-param',
-                message: `size() function only accepts an array literal or a string expression`,
-                line: current.line,
-                col: current.col
-              });
-              stop = true;
-              return {
-                next_index: null, result: false, isArr, isArr2D
-              }
-            }
             index += 2;
             const operand = state.tokenStream[index];
             console.log('checking first operand');
@@ -1463,69 +1445,69 @@ export default {
 
               index = next_index;
 
-              // const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
-              // console.log('size func id: ', id);
-              // if (!id) {
-              //   commit("ADD_ERROR", {
-              //     type: 'SEM',
-              //     code: 'undeclared-variable',
-              //     message: `Undeclared variable -> [ ${operand.token} ]`,
-              //     line: current.line,
-              //     col: current.col
-              //   });
-              //   stop = true;
-              //   return {
-              //     next_index: null, result: false, isArr, isArr2D
-              //   }
-              // } else if (id && id.isConst && id.constDataAssigned !=='string') {
-              //   commit("ADD_ERROR", {
-              //     type: 'SEM',
-              //     code: 'invalid-size-func-param',
-              //     message: `size() function only accepts an array literal or a string expression`,
-              //     line: current.line,
-              //     col: current.col
-              //   });
-              //   stop = true;
-              //   return {
-              //     next_index: null, result: false, isArr, isArr2D
-              //   }
-              // }
-              // else if (id && !id.isArr && id.data_type !== 'string') {
-              //   commit("ADD_ERROR", {
-              //     type: 'SEM',
-              //     code: 'invalid-size-func-param',
-              //     message: `size() function only accepts an array literal or a string expression`,
-              //     line: current.line,
-              //     col: current.col
-              //   });
-              //   stop = true;
-              //   return {
-              //     next_index: null, result: false, isArr, isArr2D
-              //   }
-              // } else {
-              //   const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              //     starting_index: index,
-              //     datatype: 'any',
-              //     terminating_symbol: [')', [...state.stoppers]],
-              //     scope: scope
-              //   });
+            //   // const id = state.declaredIDs.find(i => i.name === operand.lexeme && (i.scope === scope || i.scope === 'global'));
+            //   // console.log('size func id: ', id);
+            //   // if (!id) {
+            //   //   commit("ADD_ERROR", {
+            //   //     type: 'SEM',
+            //   //     code: 'undeclared-variable',
+            //   //     message: `Undeclared variable -> [ ${operand.token} ]`,
+            //   //     line: current.line,
+            //   //     col: current.col
+            //   //   });
+            //   //   stop = true;
+            //   //   return {
+            //   //     next_index: null, result: false, isArr, isArr2D
+            //   //   }
+            //   // } else if (id && id.isConst && id.constDataAssigned !=='string') {
+            //   //   commit("ADD_ERROR", {
+            //   //     type: 'SEM',
+            //   //     code: 'invalid-size-func-param',
+            //   //     message: `size() function only accepts an array literal or a string expression`,
+            //   //     line: current.line,
+            //   //     col: current.col
+            //   //   });
+            //   //   stop = true;
+            //   //   return {
+            //   //     next_index: null, result: false, isArr, isArr2D
+            //   //   }
+            //   // }
+            //   // else if (id && !id.isArr && id.data_type !== 'string') {
+            //   //   commit("ADD_ERROR", {
+            //   //     type: 'SEM',
+            //   //     code: 'invalid-size-func-param',
+            //   //     message: `size() function only accepts an array literal or a string expression`,
+            //   //     line: current.line,
+            //   //     col: current.col
+            //   //   });
+            //   //   stop = true;
+            //   //   return {
+            //   //     next_index: null, result: false, isArr, isArr2D
+            //   //   }
+            //   // } else {
+            //   //   const { next_index } = await dispatch("CHECK_EXPRESSION", {
+            //   //     starting_index: index,
+            //   //     datatype: 'any',
+            //   //     terminating_symbol: [')', [...state.stoppers]],
+            //   //     scope: scope
+            //   //   });
 
-              //   if (!next_index) {
-              //     commit("ADD_ERROR", {
-              //       type: 'SEM',
-              //       code: 'invalid-size-func-param',
-              //       message: `size() function only accepts an array literal or a string expression`,
-              //       line: current.line,
-              //       col: current.col
-              //     });
-              //     stop = true;
-              //     return {
-              //       next_index: null, result: false, isArr, isArr2D
-              //     }
-              //   }
+            //   //   if (!next_index) {
+            //   //     commit("ADD_ERROR", {
+            //   //       type: 'SEM',
+            //   //       code: 'invalid-size-func-param',
+            //   //       message: `size() function only accepts an array literal or a string expression`,
+            //   //       line: current.line,
+            //   //       col: current.col
+            //   //     });
+            //   //     stop = true;
+            //   //     return {
+            //   //       next_index: null, result: false, isArr, isArr2D
+            //   //     }
+            //   //   }
 
-              //   index = next_index;
-              // }
+            //   //   index = next_index;
+            //   // }
             } else if (operand.lexeme === '[') {
               const { next_index } = await dispatch("CHECK_ARR_EXPRESSION", {
                 starting_index: index,
@@ -1785,7 +1767,7 @@ export default {
           data_type = id.data_type;
         }
         // check array methods code
-        else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2])) {
+        else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2].lexeme)) {
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
 
           if (!id) {
@@ -1805,7 +1787,7 @@ export default {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-object-access',
-              message: `Variable [ ${id.name} ] does not contain an object value`,
+              message: `Variable [ ${id.name} ] does not contain an array literal value`,
               line: current.line,
               col: current.col
             });
@@ -2284,10 +2266,8 @@ export default {
       while(!stoppers.includes(current.lexeme)) {
         if (current.lexeme === 'size') {
           index += 1;
-          continue;
         } else if (current.lexeme === '(') {
           index += 1;
-          continue;
         } else if (current.lexeme === ')') {
           return {
             next_index: index,
@@ -2313,7 +2293,8 @@ export default {
               next_index: null, result: false, isArr, isArr2D
             }
           }
-        } else {
+        }
+        else {
           const { next_index } = await dispatch("CHECK_EXPRESSION", {
             starting_index: index,
             datatype: 'any',
@@ -2337,6 +2318,8 @@ export default {
           index = next_index;
           return { next_index, result: true, isArr: false, isArr2D: false }
         }
+
+        current = state.tokenStream[index];
       }
     }
   }
