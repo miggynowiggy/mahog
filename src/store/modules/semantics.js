@@ -1767,7 +1767,7 @@ export default {
           data_type = id.data_type;
         }
         // check array methods code
-        else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2])) {
+        else if (current.token.includes('id-') && next.lexeme === '.' && arrayMethods.includes(state.tokenStream[index + 2].lexeme)) {
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
 
           if (!id) {
@@ -1787,7 +1787,7 @@ export default {
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-object-access',
-              message: `Variable [ ${id.name} ] does not contain an object value`,
+              message: `Variable [ ${id.name} ] does not contain an array literal value`,
               line: current.line,
               col: current.col
             });
