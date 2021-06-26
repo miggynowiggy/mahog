@@ -153,7 +153,7 @@ mixed_expressions
 optional_mixed_nega
   -> option_sign optional_expr
 
-optional_expr  
+optional_expr
   -> %bool_lit init_expr_add
   | ids mixed_adds
   | typecast_num init_expr_add
@@ -181,7 +181,7 @@ string_bool_expr
   -> atChar_operands string_bool_add
 
 string_bool_add
-  -> relate_op_bool string_bool_expr 
+  -> relate_op_bool string_bool_expr
   | null
 
 mixed_adds
@@ -375,17 +375,18 @@ index_arith_expressions
   -> index_arith_operand arith_expr_add
   | %nega_num_lit index_arith_expr_add
   | float_numbers index_arith_expr_add
-  | option_sign %id
+  | ids arith_id_choices
 
-option_sign_choices
-  -> option_negas arith_expr_add
+arith_id_choices
+  -> arith_expr_add
+  | %unary
 
 index_arith_expr_add
-  -> operator arith_expressions
-  | %unary
+  -> operator arith_expressions 
 
 index_arith_operand
   -> %num_lit
+  | option_sign option_negas
  #| typecast_num
  #| trim_function {%id%}
  #| size_function {%id%}
@@ -398,7 +399,6 @@ arith_expressions
 
 arith_expr_add
   -> operator arith_expressions
-  | %unary
   | null
 
 arith_operand

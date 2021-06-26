@@ -125,7 +125,7 @@ id_assign
 id_yes
   -> %terminator
   | assign_op assignable_values %terminator
-  | operator_no_assign mixed_expressions %terminator
+  | operator mixed_expressions %terminator
   | unary %terminator
 
 assignable_values
@@ -161,8 +161,8 @@ optional_expr
   | typecast_bol init_expr_add
   | trim_function init_expr_add
   | size_function init_expr_add
-  | %not_op init_expressions
-  | %L_paren mixed_expressions %R_paren mixed_adds
+  | %not_op data_declare_operands
+  | %L_paren data_declare_expressions %R_paren mixed_adds
 
 
 stringlit_choices
@@ -186,13 +186,15 @@ string_bool_add
 
 mixed_adds
   -> %add_op mixed_expressions
-  | %subtract_op init_expressions
-  | %multiply_op init_expressions
-  | %divide_op init_expressions
-  | %modulo_op init_expressions
-  | relate_op_num init_expressions
+  | %subtract_op data_declare_expressions
+  | %multiply_op data_declare_expressions
+  | %divide_op data_declare_expressions
+  | %modulo_op data_declare_expressions
+  | relate_op_num data_declare_expressions
   | relate_op_bool mixed_expressions
-  | logical_op init_expressions
+  | logical_op data_declare_expressions
+  # | %unary
+  # | assign_with_op data_declare_expressions
   | null
 
 data_declare
@@ -203,12 +205,23 @@ num_choices
   | function_dec
   | %terminator
   | %unary %terminator
-  | %add_assign_op init_expressions %terminator
-  | assign_operators init_expressions %terminator
+  | %add_assign_op data_declare_expressions %terminator
+  | assign_operators data_declare_expressions %terminator
   | null
 
+data_declare_expressions
+-> data_declare_operands init_expr_add
+
+data_declare_choices
+  -> init_operands 
+  | ids atChar_method_null 
+
+data_declare_operands
+  -> init_optional_nega data_declare_choices
+  | atChar_operands1 atChar_init 
+
 num_values
-  -> init_expressions
+  -> data_declare_expressions
   | array_literal
 
 str_choices
@@ -329,21 +342,28 @@ bool_operator
 operator
   -> arith_op {%id%}
   | relate_op {%id%}
-  | assign_with_op {%id%}
   | logical_op {%id%}
 
-operator_no_assign
-  -> arith_op {%id%}
-  | relate_op {%id%}
-  | logical_op {%id%}
+# operator_no_assign
+#   -> arith_op {%id%}
+#   | relate_op {%id%}
+#   | logical_op {%id%}
 
-init_expressions
--> init_optional_nega init_operands init_expr_add
-| atChar_operands1 atChar_init init_expr_add
+# init_expressions
+# -> init_optional_nega init_optional_nega_choices
+# | atChar_operands1 atChar_init init_expr_add
+
+# init_optional_nega_choices
+#   -> init_operands init_expr_add
+#   | ids atChar_method_null init_id_choices
+
+# init_id_choices
+#   -> init_expr_add
+#   | %unary
+#   | assign_with_op data_declare_expressions
 
 init_expr_add
--> operator init_expressions
-| %unary
+-> operator data_declare_expressions
 | null
 
 init_optional_nega
@@ -351,13 +371,12 @@ init_optional_nega
   | null
 
 init_operands
--> ids atChar_method_null
-| %L_paren init_paren
+-> %L_paren init_paren
 | init_operands1
-| %not_op init_operands
+| %not_op data_declare_operands
 
 init_paren
-  -> init_expressions %R_paren
+  -> data_declare_expressions %R_paren
   | atChar_expressions %R_paren atChar_init
 
 init_operands1
@@ -372,30 +391,41 @@ atChar_init
   | relate_op_bool atChar_operands
 
 index_arith_expressions
-  -> index_arith_operand arith_expr_add
+  -> positive_arith_expressions
   | %nega_num_lit index_arith_expr_add
   | float_numbers index_arith_expr_add
 
+positive_arith_expressions
+  -> %num_lit arith_expr_add
+  | option_sign option_sign_choices
+
+option_sign_choices 
+  -> option_negas arith_expr_add
+  | ids arith_id_choices
+
+arith_id_choices
+  -> arith_expr_add
+  | %unary
+  | assign_with_op arith_expressions
+
 index_arith_expr_add
   -> operator arith_expressions
-  | %unary
 
-index_arith_operand
-  -> %num_lit
-  | option_sign option_negas
- #| typecast_num
- #| trim_function {%id%}
- #| size_function {%id%}
- #| %not_op arith_operand
- #| %L_paren arith_expressions %R_paren
- #| bool_expr_no_paren
+# index_arith_operand
+#   -> %num_lit
+#   | option_negas
+#  #| typecast_num
+#  #| trim_function {%id%}
+#  #| size_function {%id%}
+#  #| %not_op arith_operand
+#  #| %L_paren arith_expressions %R_paren
+#  #| bool_expr_no_paren
 
 arith_expressions
   -> arith_operand arith_expr_add
 
 arith_expr_add
   -> operator arith_expressions
-  | %unary
   | null
 
 arith_operand
@@ -413,12 +443,11 @@ option_sign
   | null
 
 option_negas
-  -> ids {%id%}
-  | %L_paren arith_expressions %R_paren
+  -> %L_paren arith_expressions %R_paren
   | typecast_num
   | trim_function {%id%}
   | size_function {%id%}
-  | %not_op arith_operand
+  | %not_op index_arith_expressions
   | bool_expr_no_paren
 
 
@@ -610,7 +639,7 @@ type_casting
   | typecast_bol
 
 trim_function
-  -> %trim %L_paren init_expressions %comma init_expressions %R_paren
+  -> %trim %L_paren data_declare_expressions %comma index_arith_expressions %R_paren
 
 input_statement
   -> %water %L_paren input_choices %R_paren
@@ -665,8 +694,8 @@ cycle_condition
   -> init_loop %terminator cond_loop %terminator paren_unary
 
 init_loop
-  -> %number_datatype %id %assign_only_op init_expressions
-  | %id %assign_only_op init_expressions
+  -> %number_datatype %id %assign_only_op data_declare_expressions
+  | %id %assign_only_op data_declare_expressions
   | null
 
 cond_loop
@@ -678,7 +707,7 @@ paren_unary
 
 paren_unary_yes
 -> %unary
-| assign_op init_expressions
+| assign_with_op data_declare_expressions
 
 control
   -> %skip_word %terminator
