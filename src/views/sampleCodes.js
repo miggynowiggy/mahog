@@ -54,7 +54,7 @@ during(anotherIndex < N) {
 
 export const code2 = `
 number something;
-number _num = "2";
+number _num = 2;
 stone wawThisIsLong = 21;
 number wow = 123456789.987654321;
 number waw = ~12.213;
@@ -64,6 +64,16 @@ string names = ['Alec',"Miggy","Juan miggy\\"waw\\""];
 number twoD = [[1,2,3],[4,5,6],[7,8,9]];
 boolean isLegal = true;
 isLegal = false;
+boolean isOk;
+
+object miggy = {
+	string name: "Miggy",
+	number age: 21,
+	boolean isLegal: true,
+	string subjs: ["CS", "IT", "MIS"],
+};
+
+miggy.subjs[1] = "IT WAW";
 
 twoD.absorb([1, 3, 2]);
 twoD.insert(2, [1]);
@@ -80,24 +90,25 @@ line-height
 comments
 ?@
 
-if(isOK) {
+isOk = true;
+
+if(isOk) {
 	carve("nice");
-} elif(isOK && (_num == "2")) {
+} elif(isOk && (_num == 2)) {
 	carve("nice nice");
 } else {
 	carve("nice x3");
 }
 
-cycle(number num1 = 2; isOK; num1++) {
+cycle(number num1 = 2; isOk; num1++) {
   carve(num1);
   if(num1 == 5) {
-    isOK = false;
+    isOk = false;
   }
 }
 
-isOK = true;
 number ctr = 0;
-during(!(!isOK) || (ctr < 3)){
+during(isOk || (ctr < 3)){
   carve(arr[ctr]);
 
   if (isOk) {
@@ -121,12 +132,9 @@ carve(myNum.atChar('a'));
 carve(myNum.atPos(3));
 carve(myNum.atChar(myNum.atPos(2)));
 
-object miggy = {
-	string name: "Miggy",
-	number age: 21,
-	boolean isLegal: true,
-	string subjs: ["CS", "IT", "MIS"],
-};
+miggy.name = 'migmig';
+miggy.subjs[1] = "CS Elective";
+@miggy.subjs.absorb("CYBSEC");
 `;
 
 export const code3 = `
@@ -134,28 +142,30 @@ number num1;
 number orig;
 number rev;
 number rem;
+number numbers = [1, 2, 3, 4, 5];
+
+numbers.absorb(6);
+numbers.insert(2, 2.5);
+numbers.uproot(1);
 
 string response = water("Enter a number: ");
 orig = num(response);
 num1 = num(response);
 
-number myunc(number x, number n){
-  carve("Hello world");
+number sum(number x, number n){
+  carve("sum of " + str(x) + " and " + str(n) + " is " + str(x + n));
   return x + n;
 }
 
-myunc(1,2);
+sum(1,2);
 
 during(num1 > 0) {
   rem = num1 % 10;
-  rev = rev * ~10 + ~rem + rem;
+  rev = rev * ~10 + rem;
   num1 = num1 / 10;
 }
 
-if (trim(orig, 1) == rev) {
-  carve("Reverse is equal to original");
-}
-elif ("" + "") {
+if (orig == rev) {
   carve("Reverse is equal to original");
 }
 else {
@@ -163,6 +173,14 @@ else {
 }
 
 cycle(number i = 0; i < 10; i++) {
-  carve("grades");
+  carve("numbers[" + str(i) + "]: " + str(numbers[i]) );
 }
+
+object student1 = {
+  string name: 'Dela Cruz',
+  number grade: 2.25,
+};
+
+student1.name = 'Anton';
+student1.grade = 2.00;
 `;

@@ -308,7 +308,7 @@ export default {
       const lexicalErrors = this.$store.getters['lexical/errors'];
       if (!lexerSuccess || lexicalErrors.length) {
         this.playLoading = false;
-        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+        this.displayAlert('error', 'Lexical Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
@@ -316,7 +316,7 @@ export default {
       const syntaxErrors = this.$store.getters['syntax/errors'];
       if (syntaxErrors.length) {
         this.playLoading = false;
-        // this.displayAlert('error', 'Error/s found!<br />Please check the Errors Table for details...');
+        this.displayAlert('error', 'Syntax Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 
@@ -324,6 +324,7 @@ export default {
       const semanticErrors = this.$store.getters['semantics/errors'];
       if (semanticErrors.length) {
         this.playLoading = false;
+        this.displayAlert('error', 'Semantic Error/s found!<br />Please check the Errors Table for details...');
         return;
       }
 

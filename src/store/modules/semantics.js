@@ -272,7 +272,7 @@ export default {
             };
             const allowedPropDataType = ['number', 'string', 'boolean'];
 
-            while (current.lexeme !== '}') {
+            while (current.lexeme !== '}' && next.lexeme !== ';') {
 
               if (current.token.includes('id-')) {
                 prop.name = current.lexeme;
@@ -282,7 +282,7 @@ export default {
               else if (current.lexeme === ':') {
                 let result;
                 if (tokenStreamCopy[index + 1].lexeme === '[') {
-                  result = await dispatch("CHECK_EXPRESSION", {
+                  result = await dispatch("CHECK_ARR_EXPRESSION", {
                     starting_index: index + 1,
                     datatype: prop.data_type,
                     terminating_symbol: [']', ','],
@@ -361,7 +361,8 @@ export default {
             }
 
             console.log("object declared: ", id);
-            state.declaredIDs.push(id);
+            id.properties = id.properties.filter(p => p.name);
+            state.declaredIDs.push({...id});
           }
         }
 
@@ -413,14 +414,17 @@ export default {
 
         else if (current.lexeme === 'carve') {
           index += 2;
+          console.log("carve statement encountered: ", state.tokenStream[index]);
           if (state.tokenStream[index].lexeme === ')') index += 2;
           else {
             const { next_index } = await dispatch('CHECK_EXPRESSION', {
               starting_index: index,
               datatype: 'any',
-              terminating_symbol: [')', ';'],
+              terminating_symbol: [')'],
               scope: functionEncountered.name
             });
+
+            console.log('carve expr finish: ', next_index);
 
             if (!next_index) {
               commit("ADD_ERROR", {
@@ -521,16 +525,17 @@ export default {
       let next = state.tokenStream[index + 1];
       let stop = false;
       let data_type = datatype;
-
-      if (datatype === 'boolean') {
-        data_type = 'number';
-      }
+      let isExprNumBol = data_type === 'number' || data_type === 'boolean';
+      // if (datatype === 'boolean') {
+      //   data_type = 'number';
+      // }
 
       while (!stop) {
         // just double check if the id is id
         if (current.token.includes("id-")) {
           const id = state.declaredIDs.find(i => i.name === current.lexeme && (i.scope === scope || i.scope === 'global'));
           console.log('id encountered: ', id, 'data type to check: ', data_type);
+          console.log('is id data type ' + id.data_type + ' : ', data_type);
           if (!id) {
             commit("ADD_ERROR", {
               type: 'SEM',
@@ -554,29 +559,6 @@ export default {
           else if (id && data_type === 'any') {
             console.log('any data type encountered');
             return { next_index: index + 1, result: true, data_type: id.data_type }
-          }
-          else if (id && !id.isConst && id.data_type !== data_type && next.lexeme !== '.') {
-            console.log('error here');
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-variable-value',
-              message: `variable -> [ ${id.name} ] does not contain a ${datatype} value`,
-              line: current.line,
-              col: current.col
-            });
-            return { next_index: null, result: false };
-          }
-          // check if the id is a constant
-          else if (id && id.isConst && id.constDataAssigned && id.constDataAssigned !== data_type) {
-            console.log('const assign: ', data_type)
-            commit("ADD_ERROR", {
-              type: 'SEM',
-              code: 'invalid-variable-value',
-              message: `variable -> [ ${id.name} ] does not contain a ${datatype} value`,
-              line: current.line,
-              col: current.col
-            });
-            return { next_index: null, result: false };
           }
 
           //check if the ID has an allowed unary
@@ -692,8 +674,80 @@ export default {
             }
           } // end of array checking
 
+          // check for atPos string method
+          else if (next.lexeme === '.' && state.tokenStream[index + 2].lexeme === 'atPos') {
+            console.log('atPos string encountered');
+            if(id.data_type !== 'string') {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-atPos-usage',
+                message: `string method .atPos can only be used on a variable that holds a string value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+            index += 2;
+            console.log("checking atPos: ", state.tokenStream[index].lexeme);
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'number',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-atPos-index',
+                message: `string method .atPos was provided with a non-numeric value parameter`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+
+            index = next_index;
+
+          } /// end of atPos method checking
+
+          // check for atChar string method
+          else if (next.lexeme === '.' && state.tokenStream[index + 2].lexeme === 'atChar') {
+            if(id.data_type !== 'string' ) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-atChar-usage',
+                message: `string method .atChar can only be used on a variable that holds a string value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+            index += 2;
+            const { next_index } = await dispatch("CHECK_EXPRESSION", {
+              starting_index: index,
+              datatype: 'string',
+              terminating_symbol: [')'],
+              scope: scope
+            });
+
+            if (!next_index) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-atChar-index',
+                message: `string method .atChar was provided with a non-string value parameter`,
+                line: current.line,
+                col: current.col
+              });
+              return { next: null, result: false }
+            }
+
+            index = next_index;
+
+          } /// end of atChar method checking
+
           // check for object checking
-          else if (id && next.lexeme === '.' && !reservedMethods.includes(state.tokenStream[index + 1])) {
+          else if (id && next.lexeme === '.' && !reservedMethods.includes(state.tokenStream[index + 2].lexeme)) {
             index += 2;
             console.log('object checking', id)
             if (id && !id.isObj) {
@@ -731,7 +785,7 @@ export default {
               }
               else if (prop && prop.isArr) {
                 index += 1;
-                if (state.tokenStream[index] !== '[') {
+                if (state.tokenStream[index].lexeme !== '[') {
                   commit("ADD_ERROR", {
                     type: 'SEM',
                     code: 'invalid-array-access',
@@ -741,7 +795,7 @@ export default {
                   });
                   return { next_index: null, result: false };
 
-                } else if (state.tokenStream[index] === '[') {
+                } else if (state.tokenStream[index].lexeme === '[') {
                   index += 1;
                   const { next_index } = await dispatch("CHECK_EXPRESSION", {
                     starting_index: index,
@@ -762,7 +816,7 @@ export default {
                   }
 
                   index = next_index + 1;
-                  if (prop.isArr2D && state.tokenStream[index] !== '[') {
+                  if (prop.isArr2D && state.tokenStream[index].lexeme !== '[') {
                     commit("ADD_ERROR", {
                       type: 'SEM',
                       code: 'invalid-array-access',
@@ -772,7 +826,7 @@ export default {
                     });
                     return { next_index: null, result: false };
 
-                  } else if (!prop.isArr && state.tokenStream[index] === '[') {
+                  } else if (!prop.isArr && state.tokenStream[index].lexeme === '[') {
                     commit("ADD_ERROR", {
                       type: 'SEM',
                       code: 'invalid-array-access',
@@ -781,7 +835,7 @@ export default {
                       col: current.col
                     });
                     return { next_index: null, result: false };
-                  } else if (prop.isArr && state.tokenStream[index] === '[') {
+                  } else if (prop.isArr && state.tokenStream[index].lexeme === '[') {
                     index += 1;
                     const { next_index } = await dispatch("CHECK_EXPRESSION", {
                       starting_index: index,
@@ -811,76 +865,6 @@ export default {
               }
             }
           } // end of object checking
-
-          // check for atPos string method
-          else if (next.lexeme === '.' && state.tokenStream[index + 1] === 'atPos') {
-            if(id.data_type !== 'string' ) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atPos-usage',
-                message: `string method .atPos can only be used on a variable that holds a string value`,
-                line: current.line,
-                col: current.col
-              });
-              return { next: null, result: false }
-            }
-            index += 2;
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index,
-              datatype: 'number',
-              terminating_symbol: [')'],
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atPos-index',
-                message: `string method .atPos was provided with a non-numeric value parameter`,
-                line: current.line,
-                col: current.col
-              });
-              return { next: null, result: false }
-            }
-
-            index = next_index;
-
-          } /// end of atPos method checking
-
-          // check for atChar string method
-          else if (next.lexeme === '.' && state.tokenStream[index + 1] === 'atChar') {
-            if(id.data_type !== 'string' ) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atChar-usage',
-                message: `string method .atChar can only be used on a variable that holds a string value`,
-                line: current.line,
-                col: current.col
-              });
-              return { next: null, result: false }
-            }
-            index += 2;
-            const { next_index } = await dispatch("CHECK_EXPRESSION", {
-              starting_index: index,
-              datatype: 'string',
-              terminating_symbol: [')'],
-              scope: scope
-            });
-
-            if (!next_index) {
-              commit("ADD_ERROR", {
-                type: 'SEM',
-                code: 'invalid-atChar-index',
-                message: `string method .atChar was provided with a non-numeric value parameter`,
-                line: current.line,
-                col: current.col
-              });
-              return { next: null, result: false }
-            }
-
-            index = next_index;
-
-          } /// end of atChar method checking
 
           // check function call
           else if (id && next.lexeme === '(') {
@@ -979,6 +963,29 @@ export default {
           } // end of function call checking
 
           else if (next.lexeme !== '.' && next.lexeme !== '[' && next.lexeme !== '(') {
+            const allowedMixed = ['number', 'boolean'];
+            if (isExprNumBol && !allowedMixed.includes(id.data_type)) {
+              console.log('error here');
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-variable-value',
+                message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
+
+            } else if (id && id.isConst && isExprNumBol && !allowedMixed.includes(id.constDataAssigned)) {
+              console.log('error here 2');
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-variable-value',
+                message: `variable -> [ ${id.name} ] does not contain a ${data_type} value`,
+                line: current.line,
+                col: current.col
+              });
+              return { next_index: null, result: false };
+            }
             console.log("id only")
             return {
               next_index: index + 1,
@@ -1029,10 +1036,10 @@ export default {
       next = state.tokenStream[index + 1];
 
       if (data_type === 'any') {
-        console.log('any data type on arr expr')
+        console.log('any data type on arr expr');
+        let innerIndex = index;
         let checkOperand = current;
         if (checkOperand.lexeme === '(') {
-          let innerIndex = index;
           while (checkOperand.lexeme === '(') {
             checkOperand = state.tokenStream[innerIndex];
             innerIndex += 1;
@@ -1040,7 +1047,8 @@ export default {
         }
 
         basisDataType = await dispatch("CHECK_OPERAND_TYPE", {
-          operand: checkOperand
+          operand: checkOperand,
+          starting_idex: innerIndex
         });
 
         if (!basisDataType) {
@@ -1122,7 +1130,11 @@ export default {
         next_index: index, result: true, isArr, isArr2D
       }
     },
-    async CHECK_OPERAND_TYPE({ state, commit, dispatch }, { operand }) {
+    async CHECK_OPERAND_TYPE({ state, commit, dispatch }, { operand, starting_index }) {
+      let index = starting_index;
+      let current = state.tokenStream[index];
+      let next = state.tokenStream[index + 1];
+
       if (operand.token.includes('id-')) {
         const id = state.declaredIDs.find(i => i.name === operand.lexeme);
         console.log('checking id type: ', id);
@@ -1130,15 +1142,49 @@ export default {
           commit("ADD_ERROR", {
             type: 'SEM',
             code: 'undeclared-variable',
-            message: `Undeclared variable -> [ ${current.lexeme} ]`,
-            line: current.line,
-            col: current.col
+            message: `Undeclared variable -> [ ${operand.lexeme} ]`,
+            line: operand.line,
+            col: operand.col
           });
           return null;
 
-        } else {
-          console.log(id.data_type);
-          return id.data_type;
+        } else if (id && id.isObj) {
+          index += 2;
+          const retrievedProp = state.tokenStream[index];
+          const prop = id.properties.find(p => p.name === retrievedProp.lexeme);
+
+          if (!prop) {
+            commit("ADD_ERROR", {
+              type: 'SEM',
+              code: 'invalid-object-property',
+              message: `[ ${state.tokenStream[index]} ] is not a property of object [ ${id.name} ]`,
+              line: operand.line,
+              col: operand.col
+            });
+            return null;
+
+          } else if (prop && state.tokenStream[index + 1].lexeme === '.' && (state.tokenStream[index + 2].lexeme === 'atPos' || state.tokenStream[index + 2].lexeme === 'atChar')) {
+            if (prop.data_type !== 'string' || prop.isArr) {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-string-method',
+                message: `[ ${state.tokenStream[index]} ] is not a property of object [ ${id.name} ]`,
+                line: operand.line,
+                col: operand.col
+              });
+              return null;
+
+            } else if (state.tokenStream[index + 2].lexeme === 'atPos') {
+              return 'string';
+            } else if (state.tokenStream[index + 2].lexeme === 'atChar') {
+              return 'number';
+            }
+          }
+
+          return prop ? prop.data_type : null;
+        }
+        else {
+          return id.data_type
         }
 
       } else {
@@ -1170,15 +1216,15 @@ export default {
         let stop = false;
         let data_type = datatype;
 
-        if (datatype === 'boolean') {
-          data_type = 'number';
-        }
+        // if (datatype === 'boolean') {
+        //   data_type = 'number';
+        // }
 
         if (data_type === 'any') {
           console.log('any data type found on expr');
           let checkOperand = current;
+          let innerIndex = index;
           if (checkOperand.lexeme === '(') {
-            let innerIndex = index;
             while (checkOperand.lexeme === '(') {
               checkOperand = state.tokenStream[innerIndex];
               innerIndex += 1;
@@ -1187,7 +1233,8 @@ export default {
           console.log('checkOperand: ', checkOperand);
 
           let basisDataType = await dispatch("CHECK_OPERAND_TYPE", {
-            operand: checkOperand
+            operand: checkOperand,
+            starting_index: innerIndex
           });
 
           console.log('operand data type: ', basisDataType);
@@ -1212,7 +1259,9 @@ export default {
         console.log('expression data type: ', data_type);
 
         while(!stop) {
-          console.log("CHECK EXPR: ", current);
+          current = state.tokenStream[index];
+          next = index + 1 !== N ? state.tokenStream[index + 1] : { lexeme: '', token: '', col: 0, line: 0 };
+          console.log("CHECK EXPR: ", current.lexeme, ' at index: ', index, ' total length: ', state.tokenStream.length);
           console.log('is expr operand goods: ', state.allowedTokensInExpr[data_type].includes(current.token));
 
           //terminating condition
@@ -1223,18 +1272,20 @@ export default {
           }
           // if opening paren is encountered, record it
           else if (current.lexeme === '(') {
+            console.log('( in expression')
             parenCounter += 1;
             index += 1;
           }
           // if the closing paren is encountered,
           else if (current.lexeme === ')' && parenCounter) {
+            console.log('parenthesis in expression closed')
             parenCounter -= 1;
             index += 1;
           }
 
           // check content of the id
           else if (current.token.includes('id-')) {
-            console.log("id encountered");
+            console.log("id encountered in expr");
             const { next_index } = await dispatch("CHECK_ID", {
               starting_index: index,
               datatype: data_type,
@@ -1337,7 +1388,8 @@ export default {
           }
 
           // check for str type cast functions
-          else if (current.lexeme === 'str' && data_type !== 'number') {
+          else if (current.lexeme === 'str' && data_type !== 'string') {
+            console.log('str typecase function error');
             commit("ADD_ERROR", {
               type: 'SEM',
               code: 'invalid-type-cast-in-expr',
@@ -1388,7 +1440,7 @@ export default {
             return {
               next_index: null, result: false, isArr, isArr2D
             }
-          } else if (current.lexeme === 'str' && next.lexeme === '(') {
+          } else if (current.lexeme === 'bol' && next.lexeme === '(') {
             index += 2;
             const { next_index } = await dispatch("CHECK_EXPRESSION", {
               starting_index: index,
@@ -1621,6 +1673,51 @@ export default {
             }
           }
 
+          // check if the string literal has string methods attached
+          else if (current.token === 'stringLit' && next.lexeme === '.') {
+            console.log("string lit with function found");
+            index += 2;
+            if (state.tokenStream[index].lexeme !== 'atPos' && state.tokenStream[index].lexeme !== 'atChar') {
+              commit("ADD_ERROR", {
+                type: 'SEM',
+                code: 'invalid-string-method',
+                message: `[ ${state.tokenStream[index].lexeme} ] is not allowed in a string literal`,
+                line: current.line,
+                col: current.col
+              });
+              stop = true;
+              return {
+                next_index: null, result: false, isArr, isArr2D
+              }
+            }
+
+            if (state.tokenStream[index].lexeme === 'atPos' || state.tokenStream[index].lexeme === 'atChar') {
+              index += 2;
+              const { next_index } = await dispatch("CHECK_EXPRESSION", {
+                starting_index: index,
+                datatype: state.tokenStream[index].lexeme === 'atPos' ? 'number' : 'string',
+                terminating_symbol: [')'],
+                scope: scope
+              });
+
+              if (!next_index) {
+                commit("ADD_ERROR", {
+                  type: 'SEM',
+                  code: 'invalid-string-method',
+                  message: `[ ${state.tokenStream[index].lexeme} ] is not allowed in a string literal`,
+                  line: current.line,
+                  col: current.col
+                });
+                stop = true;
+                return {
+                  next_index: null, result: false, isArr, isArr2D
+                }
+              }
+
+              index = next_index;
+            }
+          }
+
           // check if the operand is legit
           else if (!state.allowedTokensInExpr[data_type].includes(current.token)) {
             console.log('invalid token');
@@ -1641,9 +1738,6 @@ export default {
             index += 1;
             console.log('no case to hold')
           }
-
-          current = state.tokenStream[index];
-          next = index + 1 !== N ? state.tokenStream[index + 1] : { lexeme: '', token: '', col: 0, line: 0 };
         }
 
         console.log("expression is correct");
@@ -1651,6 +1745,7 @@ export default {
           next_index: index, result: true, isArr, isArr2D
         }
       } catch (err) {
+        console.log(err);
         return {
           next_index: null, result: false, isArr: false, isArr2D: false
         }
