@@ -161,7 +161,7 @@ optional_expr
   | typecast_bol init_expr_add
   | trim_function init_expr_add
   | size_function init_expr_add
-  | %not_op data_declare_operands
+  | %not_op data_declare_operands init_expr_add
   | %L_paren data_declare_expressions %R_paren mixed_adds
 
 

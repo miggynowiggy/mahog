@@ -136,7 +136,7 @@ var grammar = {
     {"name": "optional_expr", "symbols": ["typecast_bol", "init_expr_add"]},
     {"name": "optional_expr", "symbols": ["trim_function", "init_expr_add"]},
     {"name": "optional_expr", "symbols": ["size_function", "init_expr_add"]},
-    {"name": "optional_expr", "symbols": [(lexer.has("not_op") ? {type: "not_op"} : not_op), "data_declare_operands"]},
+    {"name": "optional_expr", "symbols": [(lexer.has("not_op") ? {type: "not_op"} : not_op), "data_declare_operands", "init_expr_add"]},
     {"name": "optional_expr", "symbols": [(lexer.has("L_paren") ? {type: "L_paren"} : L_paren), "data_declare_expressions", (lexer.has("R_paren") ? {type: "R_paren"} : R_paren), "mixed_adds"]},
     {"name": "stringlit_choices", "symbols": [(lexer.has("period") ? {type: "period"} : period), "stringlit_choices_methods"]},
     {"name": "stringlit_choices", "symbols": ["atPos_method_null_choices"]},
